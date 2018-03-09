@@ -1,0 +1,17 @@
+* {
+	display: none;
+}
+
+.item-container {
+	height: 50px;
+	width: 50px;
+	display: inline-block;
+	text-align: left;
+}
+
+.item-container__text {
+	font-size: 18px;
+	font-style: italic;
+	font-weight: bold;
+	color: gray;
+}
