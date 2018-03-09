@@ -1,0 +1,1 @@
+var pathPhpFunc = 'app/functions/fn_';

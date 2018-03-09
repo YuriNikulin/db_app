@@ -1,17 +1,79 @@
-* {
-	display: none;
+body {
+	background-color: #3C5A63;
 }
 
-.item-container {
-	height: 50px;
-	width: 50px;
-	display: inline-block;
-	text-align: left;
+.bg--white {
+	background-color: #fff;
 }
 
-.item-container__text {
+.title {
+	text-transform: uppercase;
+}
+
+.h3 {
 	font-size: 18px;
-	font-style: italic;
-	font-weight: bold;
-	color: gray;
+}
+
+.centered {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+}
+
+.input-label {
+	display: block;
+	margin-bottom: 5px;
+}
+
+.input-container {
+	margin-bottom: 15px;
+}
+
+.input {
+	height: 40px;
+	line-height: 40px;
+	border: 1px solid #000;
+	padding-left: 10px;
+	padding-right: 10px;
+	width: 320px;
+}
+
+.input[type="password"] {
+	letter-spacing: 5px;
+}
+
+.input[type="password"]::-webkit-input-placeholder { /* Chrome/Opera/Safari */
+    letter-spacing: 0;
+}
+.input[type="password"]::-moz-placeholder { /* Firefox 19+ */
+    letter-spacing: 0;
+}
+.input[type="password"]:-ms-input-placeholder { /* IE 10+ */
+    letter-spacing: 0;
+}
+.input[type="password"]:-moz-placeholder { /* Firefox 18- */
+    letter-spacing: 0;
+}
+
+.btn {
+	padding: 9px 16px;
+	min-width: 150px;
+	text-transform: uppercase;
+	border: none;
+	outline: none;
+	cursor: pointer;
+}
+
+.btn--primary {
+	background-color: #3C5A63;
+	color: #fff;
+}
+
+.btn--primary:hover {
+	background-color: #4B8699;
+}
+
+.btn--primary:active {
+	box-shadow: inset 0px 0px 5px 5px rgba(255,255,255,.2);
 }
