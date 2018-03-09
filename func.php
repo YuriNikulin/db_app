@@ -16,7 +16,7 @@ if (isset($_POST['submit'])) {
     }
 
     catch(PDOException $error) {
-        echo 'LOH BLYA' . $error->getMessage();
+        echo 'CONNECTION ERROR HAS OCCURED' . $error->getMessage();
     }
 }
 
