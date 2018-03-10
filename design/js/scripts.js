@@ -56,3 +56,32 @@ function hideElem(elem, deleteElem) {
 		}
 	}, animDuration)
 }
+
+function fetchAllDb() {
+	var mainContainer = renderMainContainer(),
+		fadParameters, fadAnswer;
+
+	fadParameters = '?script=get_databases.php';
+		xmlhttp = new XMLHttpRequest();
+		xmlhttp.onload = function() {
+			fadAnswer = JSON.parse(this.response);
+				if (fadAnswer.success) {
+					var container = basicRender('div', 'content-left', mainContainer),
+						dbListContainer = basicRender('div', 'db-list', container),
+						dbCreate = basicRender('a', 'db__create action action__create-db', container);
+
+					dbCreate.innerHTML = 'Create database';	
+
+					for (var i = 0; i < fadAnswer.db_list.length; i++) {
+						renderDb(fadAnswer.db_list[i], dbListContainer);
+					}
+				}
+			}
+		
+		xmlhttp.open("GET", 'func.php' + fadParameters, true);
+		xmlhttp.send();
+}
+
+function fetchAllTables() {
+	
+}

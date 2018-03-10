@@ -1,4 +1,5 @@
 <?php
+	session_start();
 	$username = $_REQUEST["username"];
 	$password = $_REQUEST["password"];
 	try {
@@ -7,6 +8,9 @@
 			"success" => 1,
 			"msg" => 'You have been successfully connected to server as ' . $username
 		);
+
+		$_SESSION["username"] = $username;
+		$_SESSION["password"] = $password;
 	}
 	catch(PDOException $error) {
 		$answer = array(

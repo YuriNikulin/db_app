@@ -1,4 +1,4 @@
-<div class="login centered bg--white">
+<div class="login centered bg--white shown">
 	<div class="input-container login-container">
 		<label class="input-label login-container__label title h3" for="login_username">
 			Username

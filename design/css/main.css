@@ -2,6 +2,10 @@ body {
 	background-color: #3C5A63;
 }
 
+body,html {
+	height: 100%;
+}
+
 .bg--white {
 	background-color: #fff;
 }
@@ -96,4 +100,11 @@ body {
 
 .notification.shown {
 	opacity: 1;
+}
+
+.content {
+	background: #fff;
+	max-width: 1300px;
+	margin: 0 auto;
+	height: 100%;
 }

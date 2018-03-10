@@ -12,6 +12,10 @@ window.addEventListener('load', function() {
 			lAnswer = JSON.parse(this.response);
 			lAnim = lAnswer.timer || notificationDuration;
 			showNotification(lAnswer.msg, lAnim);
+			if (lAnswer.success) {
+				fetchAllDb();
+				hideElem(lContainer);
+			}
 		}
 		
 		xmlhttp.open("GET", 'func.php' + lParameters, true);

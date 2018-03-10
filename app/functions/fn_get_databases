@@ -1,8 +1,0 @@
-<?php
-
-function fn_get_databases($connection) {
-	$db_list = $connection->query( 'SHOW DATABASES' );
-	return $db_list;
-}
-
-?>

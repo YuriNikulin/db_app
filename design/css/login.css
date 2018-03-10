@@ -1,3 +1,9 @@
 .login {
 	padding: 15px;
+	transition: .3s ease-in-out;
+	opacity: 0;
+}
+
+.login.shown {
+	opacity: 1;
 }
