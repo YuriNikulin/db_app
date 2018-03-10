@@ -9,11 +9,10 @@ var MiniSearch = function(search, container) {
 	var elems, i;
 	search.onfocus = function() {
 		elems = container.childNodes;
-		console.log(elems);
 	}
 	search.onkeyup = function() {
 		var searchPhrase = this.value,
-			searchMask = new RegExp('.*' + searchPhrase + '.*');
+			searchMask = new RegExp('.*' + searchPhrase + '.*', 'i');
 		for (i = 0; i < elems.length; i++) {
 			if (elems[i] == search) {
 				continue;

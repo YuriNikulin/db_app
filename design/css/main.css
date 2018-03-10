@@ -149,8 +149,14 @@ body,html {
 	overflow-y: hidden;
 }
 
+@media (max-width: 1024px) {
+	.content-left {
+		width: 320px;
+	}
+}
+
 .db-list {
-	overflow-y: auto;
+	overflow-y: scroll;
 }
 
 .db-tables {
