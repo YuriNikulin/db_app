@@ -17,7 +17,8 @@ function basicRender(tagName, elemClassName, container, deleteIfExists) {
 }
 
 function renderMainContainer() {
-	var mainContainer = basicRender('div', 'content', body, true);
+	var mainContainer = basicRender('div', 'content clearfix', body, true);
+	calcContentHeight(mainContainer);
 	return mainContainer;
 }
 
@@ -37,4 +38,9 @@ function renderDb(db, container) {
 	})
 
 	dbTables = basicRender('div', 'db-tables', dbContainer);
+}
+
+function renderTable(table, container) {
+	var elem = basicRender('a', 'table', container);
+	elem.innerHTML = table;
 }

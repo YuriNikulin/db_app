@@ -1,6 +1,8 @@
 var pathPhpFunc = 'app/functions/fn_',
 	body = document.querySelector('body'),
 	animDuration = 300,
+	windowHeight,
+	windowWidth,
 	notificationDuration = 4000;
 
 var Accordion = function(elem, height) {
@@ -26,6 +28,5 @@ var Accordion = function(elem, height) {
 		} else {
 			elem.open();
 		}
-	});
-	console.log(elem);
+	});	
 }

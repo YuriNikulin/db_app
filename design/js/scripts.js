@@ -2,6 +2,43 @@ function getScript(name) {
 	return pathPhpFunc + name + '.php';
 }
 
+function getWindowHeight() {
+	windowHeight = window.innerHeight;
+	return windowHeight;
+}
+
+function calcContentHeight(elem) {
+	if (!elem) {
+		return 0;
+	}
+	elem.style.height = getWindowHeight() + 'px';
+
+	window.addEventListener('resize', function() {
+		elem.style.height = getWindowHeight() + 'px';
+	})
+}
+
+function fixHeight(elem) {
+	var parent = elem.parentNode,
+		siblings = parent.childNodes,
+		siblingsHeight;
+
+	function calc() {
+		siblingsHeight = 0;
+		for (var i = 0; i < siblings.length; i++) {
+			if (siblings[i] != elem) {
+				siblingsHeight += siblings[i].offsetHeight;
+			}
+		}
+
+		elem.style.height = parent.offsetHeight - siblingsHeight + 'px';
+	}
+
+	calc();
+
+	window.addEventListener('resize', calc);
+}
+
 function showNotification(text, timer) {
 	var nContainer = document.createElement('div'),
 		nText = document.createElement('p'),
@@ -67,10 +104,16 @@ function fetchAllDb() {
 			fadAnswer = JSON.parse(this.response);
 				if (fadAnswer.success) {
 					var container = basicRender('div', 'content-left', mainContainer),
+						title = basicRender('h3', 'title h3 content__title', container),
 						dbListContainer = basicRender('div', 'db-list', container),
-						dbCreate = basicRender('a', 'db__create action action__create-db', container);
+						dbCreateContainer = basicRender('div', 'tac db__create-container', container),
+						dbCreate = basicRender('a', 'btn btn--primary db__create action action__create-db', dbCreateContainer);
 
+
+					title.innerHTML = 'Databases';
 					dbCreate.innerHTML = 'Create database';	
+
+					fixHeight(dbListContainer);
 
 					for (var i = 0; i < fadAnswer.db_list.length; i++) {
 						renderDb(fadAnswer.db_list[i], dbListContainer);
@@ -82,6 +125,32 @@ function fetchAllDb() {
 		xmlhttp.send();
 }
 
-function fetchAllTables() {
-	
+function fetchAllTables(elem) {
+	var dbElem = elem.parentNode;
+
+	if (dbElem.classList.contains('db--tables-rendered')) {
+		return 0;
+	}	
+
+	var db = dbElem.dataset.db,
+		fatContainer = dbElem.querySelector('.db-tables'),
+		fatScript = '?script=query.php',
+		fatSql = 'SHOW TABLES FROM ' + db,
+		fatParameters = fatScript + '&sql=' + fatSql,
+		fatAnswer;
+
+	xmlhttp = new XMLHttpRequest();
+	xmlhttp.onload = function() {
+		fatAnswer = JSON.parse(this.response);
+		if (fatAnswer.success) {
+			dbElem.classList.add('db--tables-rendered');
+			var tablesContainer = basicRender('div', 'tables', fatContainer);
+			showElem(tablesContainer);
+			for (var i = 0; i < fatAnswer.msg.length; i++) {
+				renderTable(fatAnswer.msg[i], tablesContainer);
+			}
+		}
+	}
+	xmlhttp.open("GET", 'func.php' + fatParameters, true);
+	xmlhttp.send();
 }
