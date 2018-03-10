@@ -110,6 +110,21 @@ body,html {
 	bottom: 15px;
 }
 
+.mini-search {
+	height: 35px;
+	width: 100%;
+	line-height: 35px;
+	border: none;
+	border-bottom: 1px solid #D8D8D8;
+	font-size: 14px;
+	display: block;
+}
+
+.mini-search:hover,
+.mini-search:focus {
+	border-bottom: 1px solid #3C5A63;
+}
+
 .notification.shown {
 	opacity: 1;
 }
@@ -146,6 +161,10 @@ body,html {
 	height: 0;
 }
 
+.db-tables.open {
+	border-bottom: 1px solid #D8D8D8;
+}
+
 .db__title {
 	display: block;
 	padding: 10px 15px;
@@ -175,4 +194,10 @@ body,html {
 .table {
 	display: block;
 	word-wrap: break-word;
+	padding: 3px 0;
+	cursor: pointer;
+}
+
+.table:hover {
+	text-decoration: underline;
 }

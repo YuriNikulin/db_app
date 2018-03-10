@@ -5,6 +5,29 @@ var pathPhpFunc = 'app/functions/fn_',
 	windowWidth,
 	notificationDuration = 4000;
 
+var MiniSearch = function(search, container) {
+	var elems, i;
+	search.onfocus = function() {
+		elems = container.childNodes;
+		console.log(elems);
+	}
+	search.onkeyup = function() {
+		var searchPhrase = this.value,
+			searchMask = new RegExp('.*' + searchPhrase + '.*');
+		for (i = 0; i < elems.length; i++) {
+			if (elems[i] == search) {
+				continue;
+			}
+
+			if (!elems[i].innerHTML.match(searchMask)) {
+				elems[i].style.display = 'none';
+			}  else {
+				elems[i].removeAttribute('style');
+			}
+		}
+	}
+} 	
+
 var Accordion = function(elem, height) {
 	elem.open = function() {
 		var content = elem.nextSibling;

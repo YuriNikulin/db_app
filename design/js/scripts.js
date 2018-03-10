@@ -145,6 +145,11 @@ function fetchAllTables(elem) {
 		if (fatAnswer.success) {
 			dbElem.classList.add('db--tables-rendered');
 			var tablesContainer = basicRender('div', 'tables', fatContainer);
+			var search = basicRender('input', 'mini-search', tablesContainer);
+			search.placeholder = 'Find table';
+
+			new MiniSearch(search, tablesContainer);
+			
 			showElem(tablesContainer);
 			for (var i = 0; i < fatAnswer.msg.length; i++) {
 				renderTable(fatAnswer.msg[i], tablesContainer);
