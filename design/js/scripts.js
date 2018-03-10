@@ -7,6 +7,11 @@ function getWindowHeight() {
 	return windowHeight;
 }
 
+function unlogin() {
+	var unloginButton = basicRender('a', 'unlogin', body);
+	unloginButton.innerHTML = 'Log out';
+}
+
 function calcContentHeight(elem) {
 	if (!elem) {
 		return 0;
@@ -149,7 +154,7 @@ function fetchAllTables(elem) {
 			search.placeholder = 'Find table';
 
 			new MiniSearch(search, tablesContainer);
-			
+
 			showElem(tablesContainer);
 			for (var i = 0; i < fatAnswer.msg.length; i++) {
 				renderTable(fatAnswer.msg[i], tablesContainer);
