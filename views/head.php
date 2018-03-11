@@ -6,4 +6,5 @@
 	<link rel="stylesheet" href="design/css/reset.css">
 	<link rel="stylesheet" href="design/css/main.css">
 	<link rel="stylesheet" href="design/css/login.css">
+	<link rel="stylesheet" href="design/css/table.css">
 </head>

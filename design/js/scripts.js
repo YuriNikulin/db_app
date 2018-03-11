@@ -229,12 +229,32 @@ function fetchTable(table, db) {
 
 	xmlhttp.onload = function() {
 		ftAnswer = JSON.parse(this.response);
-		console.log(ftAnswer);
 		if (ftAnswer.success) {
-
+			renderRightContainer(db, table);
+			renderTableDescription(ftAnswer.msg);
 		}
 	}
 
 	xmlhttp.open("GET", 'func.php' + ftParameters, true);
 	xmlhttp.send();
+}
+
+function getFields(data) {
+	var fields = [];
+	for (var i in data) {
+		fields.push(Object.keys(data[i]));
+	}
+	return unionOfArrays(fields);
+}
+
+function unionOfArrays(data) {
+	var obj = {};
+	
+	for (i = 0; i < data.length; i++) {
+		for (var j = 0; j < data[i].length; j++) {
+			obj[data[i][j]] = 1;
+		}
+	}
+	
+	return obj;
 }

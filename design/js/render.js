@@ -28,18 +28,32 @@ function emptyContent() {
 	content.parentNode.removeChild(content);
 }
 
-function renderRightContainer() {
+function renderRightContainer(dbName, tableName) {
 	var mainContent = document.querySelector('.content'),
-		rightContainer = basicRender('div', 'content-right', mainContent, true),
-		rightHeader = basicRender('div', 'tabs', rightContainer),
+		rightContainer = basicRender('div', 'content-right', mainContent, true);
+
+	if (dbName && tableName) {
+		var rightTopPanel = basicRender('div', 'content__title content-panel', rightContainer, true),
+			dbSpan = basicRender('h3', 'h3 content-panel-item__parameter title', rightTopPanel),
+			dbValue = basicRender('h3', 'h3 content-panel-item__value', rightTopPanel),
+			tbSpan = basicRender('h3', 'h3 content-panel-item__parameter title', rightTopPanel),
+			tbValue = basicRender('h3', 'h3 content-panel-item__value', rightTopPanel);
+
+		dbSpan.innerHTML = 'Database: ';
+		dbValue.innerHTML = dbName;
+		tbSpan.innerHTML = 'Table: ';
+		tbValue.innerHTML = tableName;	
+	}
+		
+	var	rightHeader = basicRender('div', 'tabs', rightContainer),
 		tabContainer = basicRender('div', 'tab-container', rightContainer),
 		tableStructure = basicRender('div', 'table-structure tab-content', tabContainer),
 		tableContent = basicRender('div', 'table-content tab-content', tabContainer),
-		tabTableStructure = basicRender('h3', 'h3 content__title title tabs__tab', rightHeader),
-		tabTableContent = basicRender('h3', 'h3 content__title title tabs__tab', rightHeader),
+		tabTableStructure = basicRender('h3', 'h3 content__title title tabs__tab tabs__structure', rightHeader),
+		tabTableContent = basicRender('h3', 'h3 content__title title tabs__tab tabs__content', rightHeader),
 		rightFooter = basicRender('div', 'db__create-container tar content-right-footer', rightContainer),
 		logOut = basicRender('a', 'btn btn--primary logout', rightFooter);
-
+	
 	tabTableStructure.innerHTML = 'Table structure';	
 	tabTableContent.innerHTML = 'Table content';
 
@@ -86,4 +100,46 @@ function renderTable(table, container) {
 	elem.addEventListener('click', function() {
 		fetchTable(this.dataset.table, findParent(this, 'db').dataset.db);
 	})
+}
+
+function renderChangingButtons(container) {
+	var enableButton = basicRender('a', 'btn btn--primary ml mt', container),
+		saveButton = basicRender('a', 'btn btn--success disabled ml mt', container);
+
+	enableButton.innerHTML = 'Enable changing mode';
+	saveButton.innerHTML = 'Save changes';
+	
+	enableButton.addEventListener('click', function() {
+		if (saveButton.classList.contains('disabled')) {
+			enableButton.innerHTML = 'Disable changing mode';
+			saveButton.classList.remove('disabled');
+		} else {
+			enableButton.innerHTML = 'Enable changing mode';
+			saveButton.classList.add('disabled');
+		}
+	})
+
+	return {'change': enableButton, 'save': saveButton};
+
+}
+
+function renderTableDescription(data) {
+	console.log(data);
+	var fields = getFields(data),
+		mainContainer = document.querySelector('.table-structure'),
+		changingButtons = renderChangingButtons(mainContainer),
+		tableContainer = basicRender('div', 'e-table-container', mainContainer),
+		tableContent = basicRender('table', 'e-table', tableContainer),
+		activeTab = document.querySelector('.tabs__structure'),
+		fieldsTh, fieldsTr, td;
+
+	activeTab.parent.open();
+
+	fieldsTh = basicRender('th', '', tableContent);
+	fieldsTr = basicRender('tr', '', fieldsTh);
+	for (var i in fields) {
+		td = basicRender('td', '', fieldsTr);
+		td.innerHTML = i;
+	}
+	
 }

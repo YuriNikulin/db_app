@@ -1,0 +1,12 @@
+.e-table-container {
+	padding: 15px;
+}
+
+.e-table td {
+	padding: 8px 15px;
+	text-align: center;
+	border: 1px solid #D8D8D8;
+	min-width: 100px;
+	max-width: 300px;
+	vertical-align: middle;
+}

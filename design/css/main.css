@@ -26,6 +26,22 @@ body,html {
 	transform: translate(-50%, -50%);
 }
 
+.mb {
+	margin-bottom: 15px;
+}
+
+.mr {
+	margin-right: 15px;
+}
+
+.mt {
+	margin-top: 15px;
+}
+
+.ml {
+	margin-left: 15px;
+}
+
 .tac {
 	text-align: center;
 }
@@ -91,6 +107,10 @@ body,html {
 	text-align: center;
 }
 
+.btn.disabled {
+	opacity: .2;
+}
+
 .btn--primary {
 	background-color: #3C5A63;
 	color: #fff;
@@ -100,7 +120,29 @@ body,html {
 	background-color: #4B8699;
 }
 
+.btn--primary.disabled:hover {
+	background-color: #4B8699;
+}
+
 .btn--primary:active {
+	box-shadow: inset 0px 0px 5px 5px rgba(255,255,255,.2);
+}
+
+.btn--success {
+	background-color: #3E73BB;
+	color: #fff;
+}
+
+.btn--success:hover {
+	background-color: #548DDC;
+}
+
+.btn--success.disabled:hover {
+	background-color: #3E73BB;
+	cursor: auto;
+}
+
+.btn--success:active {
 	box-shadow: inset 0px 0px 5px 5px rgba(255,255,255,.2);
 }
 
@@ -154,6 +196,25 @@ body,html {
 	border-right: 1px solid #D8D8D8;
 	height: 100%;
 	overflow-y: hidden;
+}
+
+.content-panel {
+	font-size: 0;
+}
+
+.content-panel .h3 {
+	display: inline-block;
+	vertical-align: middle;
+}
+
+.content-panel-item__parameter {
+	margin-right: 5px;
+	font-weight: normal;
+}
+
+.content-panel-item__value {
+	margin-right: 15px;
+	font-weight: bold;
 }
 
 .content-right {
