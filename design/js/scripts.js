@@ -112,6 +112,17 @@ function showNotification(text, timer) {
 	return nContainer;
 }
 
+function findParent(elem, parentClass) {
+	var parent = elem.parentNode;
+	while (parent != body) {
+		if (parent.classList.contains(parentClass)) {
+			return parent;
+		}
+		elem = parent;
+		parent = elem.parentNode;
+	}
+}
+
 function showElem(elem) {
 	elem.style.display = 'block';
 	setTimeout(function() {
@@ -181,7 +192,7 @@ function fetchAllTables(elem) {
 
 	var db = dbElem.dataset.db,
 		fatContainer = dbElem.querySelector('.db-tables'),
-		fatScript = '?script=query.php',
+		fatScript = '?script=get_tables.php',
 		fatSql = 'SHOW TABLES FROM ' + db,
 		fatParameters = fatScript + '&sql=' + fatSql,
 		fatAnswer;
@@ -204,5 +215,26 @@ function fetchAllTables(elem) {
 		}
 	}
 	xmlhttp.open("GET", 'func.php' + fatParameters, true);
+	xmlhttp.send();
+}
+
+function fetchTable(table, db) {
+	var ftScript = '?script=query.php',
+		ftSql = ' DESCRIBE ' + table,
+		ftMode = '&mode=read',
+		ftParameters = ftScript + '&use=' + db + '&sql=' + ftSql + ftMode,
+		ftAnswer;
+
+	xmlhttp = new XMLHttpRequest();
+
+	xmlhttp.onload = function() {
+		ftAnswer = JSON.parse(this.response);
+		console.log(ftAnswer);
+		if (ftAnswer.success) {
+
+		}
+	}
+
+	xmlhttp.open("GET", 'func.php' + ftParameters, true);
 	xmlhttp.send();
 }

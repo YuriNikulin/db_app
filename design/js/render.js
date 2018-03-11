@@ -84,6 +84,6 @@ function renderTable(table, container) {
 	elem.dataset.table = table;
 
 	elem.addEventListener('click', function() {
-
+		fetchTable(this.dataset.table, findParent(this, 'db').dataset.db);
 	})
 }
