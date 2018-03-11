@@ -52,3 +52,32 @@ var Accordion = function(elem, height) {
 		}
 	});	
 }
+
+var Tabs = function(data) {
+	for (var i in data) {
+		var elem = data[i]
+			elem.tab.parent = elem;
+
+		elem.tab.addEventListener('click', function() {
+			if (!this.classList.contains('active')) {
+				this.parent.open();
+			}
+		})
+
+		elem.open = function() {
+			for (var j in data) {
+				data[j].close();
+			}
+
+			this.tab.classList.add('active');
+			this.content.classList.add('shown');
+			this.content.style.display = 'block';
+		}
+
+		elem.close = function() {
+			this.tab.classList.remove('active');
+			this.content.classList.remove('shown');
+			this.content.style.display = 'none';
+		}
+	}
+}

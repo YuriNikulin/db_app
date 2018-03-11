@@ -7,9 +7,48 @@ function getWindowHeight() {
 	return windowHeight;
 }
 
-function unlogin() {
-	var unloginButton = basicRender('a', 'unlogin', body);
-	unloginButton.innerHTML = 'Log out';
+function login() {
+	var lContainer = document.querySelector('.login'),
+		lSubmit = lContainer.querySelector('#login_submit'),
+		lUsername = lContainer.querySelector('#login_username'),
+		lPassword = lContainer.querySelector('#login_password'),
+		lParameters, lAnswer, lAnim, unloginButton;
+
+	showElem(lContainer);	
+
+	lSubmit.addEventListener('click', function() {
+		lParameters = '?username=' + lUsername.value + '&password=' + lPassword.value + '&script=connect.php';
+		xmlhttp = new XMLHttpRequest();
+		xmlhttp.onload = function() {
+			lAnswer = JSON.parse(this.response);
+			lAnim = lAnswer.timer || notificationDuration;
+			showNotification(lAnswer.msg, lAnim);
+			if (lAnswer.success) {
+				fetchAllDb();
+				hideElem(lContainer);
+			}
+		}
+		
+		xmlhttp.open("GET", 'func.php' + lParameters, true);
+		xmlhttp.send();
+	})	
+}
+
+function endSession() {
+	var parameters = '?script=unlogin.php',
+		answer;
+
+	xmlhttp = new XMLHttpRequest();
+		xmlhttp.onload = function() {
+			answer = JSON.parse(this.response);
+			if (answer.success) {
+				emptyContent();
+				login();
+			}
+		}
+		
+		xmlhttp.open("GET", 'func.php' + parameters, true);
+		xmlhttp.send();
 }
 
 function calcContentHeight(elem) {
@@ -47,7 +86,7 @@ function fixHeight(elem) {
 function showNotification(text, timer) {
 	var nContainer = document.createElement('div'),
 		nText = document.createElement('p'),
-		oldNotification = document.querySelector('.notification');
+		oldNotification = document.querySelectorAll('.notification');
 
 	nContainer.className = 'notification';
 	nContainer.appendChild(nText);
@@ -56,7 +95,9 @@ function showNotification(text, timer) {
 	nText.innerHTML = text ? text : 'OK';
 
 	if (oldNotification) {
-		hideElem(oldNotification, true);
+		for (var i = 0; i < oldNotification.length; i++) {
+			hideElem(oldNotification[i], true);
+		}
 	}
 
 	body.appendChild(nContainer);
@@ -119,6 +160,7 @@ function fetchAllDb() {
 					dbCreate.innerHTML = 'Create database';	
 
 					fixHeight(dbListContainer);
+					renderRightContainer();
 
 					for (var i = 0; i < fadAnswer.db_list.length; i++) {
 						renderDb(fadAnswer.db_list[i], dbListContainer);
