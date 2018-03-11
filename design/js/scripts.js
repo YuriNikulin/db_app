@@ -259,23 +259,18 @@ function unionOfArrays(data) {
 	return obj;
 }
 
-function saveAndGenerateSqlStructure(data) {
-	var localData = data;
-	console.log(localData);
+function saveAndGenerateSqlStructure(data, mode) {
+	var localData = data,
+		query,
+		mode;
+
+	console.log(data, mode);	
 }
 
 function altering(changingButtons, tableContent, fields) {
 	var changingMode = false,
 		rows,
-		columnsToAlter = {
-
-			'alter': {},
-			'drop': {},
-			'add': {},
-			'pushInto': function(row, mode) {
-				columnsToAlter[mode][row.dataset.column] = {};
-			}
-		};
+		columnsToAlter = {};
 
 	inputs = tableContent.querySelectorAll('input');
 	rows = tableContent.querySelectorAll('tbody tr');	
@@ -293,7 +288,8 @@ function altering(changingButtons, tableContent, fields) {
 				for (i = 0; i < inputs.length; i++) {
 					inputs[i].disabled = false;
 					inputs[i].onkeyup = function() {
-						columnsToAlter.pushInto(this.parentNode.parentNode, 'alter');
+						var column = this.parentNode.parentNode;
+						columnsToAlter[column.dataset.column] = column;
 					}
 				}
 
@@ -305,14 +301,22 @@ function altering(changingButtons, tableContent, fields) {
 
 				for (i = 0; i < rows.length; i++) {
 					rows[i].onclick = function() {
-						columnsToAlter.pushInto(this, 'drop');
+						if (this.classList.contains('delete')) {
+							this.classList.remove('delete');
+							delete columnsToAlter[this.dataset.column];
+						} else {
+							this.classList.add('delete');
+							columnsToAlter[this.dataset.column] = this;
+						}
 					}
 				}
 
 			} else if (this == changingButtons.save) {
-				saveAndGenerateSqlStructure(columnsToAlter);
+				saveAndGenerateSqlStructure(columnsToAlter, changingMode);
 				changingMode = false;
 				changingButtons.save.classList.add('disabled');
+				resetAltering(inputs, tableContent);
+				resetDeleting(rows, tableContent);
 
 			} else {
 				changingMode = false;
@@ -329,14 +333,15 @@ function altering(changingButtons, tableContent, fields) {
 			items[i].value = items[i].dataset.value;
 		}
 		container.classList.remove('altering');
-		columnsToAlter['alter'] = {};
+		columnsToAlter = {};
 	}
 
 	function resetDeleting(items, container) {
 		for (var i = 0; i < items.length; i++) {
 			items[i].classList.remove('delete');
 		}
+
 		container.classList.remove('deleting');
-		columnsToAlter['drop'] = {};
+		columnsToAlter = {};
 	}
 }

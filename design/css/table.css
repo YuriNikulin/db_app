@@ -27,3 +27,11 @@
 .e-table.altering input {
 	background: #F2F4F7;
 }
+
+.e-table.deleting input {
+	cursor: pointer;
+}
+
+.e-table.deleting tbody .delete {
+	background-color: #E9AFA7;
+}
