@@ -258,3 +258,85 @@ function unionOfArrays(data) {
 	
 	return obj;
 }
+
+function saveAndGenerateSqlStructure(data) {
+	var localData = data;
+	console.log(localData);
+}
+
+function altering(changingButtons, tableContent, fields) {
+	var changingMode = false,
+		rows,
+		columnsToAlter = {
+
+			'alter': {},
+			'drop': {},
+			'add': {},
+			'pushInto': function(row, mode) {
+				columnsToAlter[mode][row.dataset.column] = {};
+			}
+		};
+
+	inputs = tableContent.querySelectorAll('input');
+	rows = tableContent.querySelectorAll('tbody tr');	
+
+	for (var i in changingButtons) {
+		changingButtons[i].addEventListener('click', function() {
+			
+
+			if (this == changingButtons.change && changingMode != 'alter') {
+				changingMode = 'alter';
+				tableContent.classList.add('altering');
+				changingButtons.save.classList.remove('disabled');
+				resetDeleting(rows, tableContent);
+
+				for (i = 0; i < inputs.length; i++) {
+					inputs[i].disabled = false;
+					inputs[i].onkeyup = function() {
+						columnsToAlter.pushInto(this.parentNode.parentNode, 'alter');
+					}
+				}
+
+			} else if (this == changingButtons.remove && changingMode != 'drop') {
+				changingMode = 'drop';
+				tableContent.classList.add('deleting');
+				changingButtons.save.classList.remove('disabled');
+				resetAltering(inputs, tableContent);
+
+				for (i = 0; i < rows.length; i++) {
+					rows[i].onclick = function() {
+						columnsToAlter.pushInto(this, 'drop');
+					}
+				}
+
+			} else if (this == changingButtons.save) {
+				saveAndGenerateSqlStructure(columnsToAlter);
+				changingMode = false;
+				changingButtons.save.classList.add('disabled');
+
+			} else {
+				changingMode = false;
+				changingButtons.save.classList.add('disabled');
+				resetAltering(inputs, tableContent);
+				resetDeleting(rows, tableContent);
+			}
+		}) 	
+	}
+
+	function resetAltering(items, container) {
+		for (var i = 0; i < items.length; i++) {
+			items[i].disabled = true;
+			items[i].value = items[i].dataset.value;
+		}
+		container.classList.remove('altering');
+		columnsToAlter['alter'] = {};
+	}
+
+	function resetDeleting(items, container) {
+		for (var i = 0; i < items.length; i++) {
+			items[i].classList.remove('delete');
+		}
+		container.classList.remove('deleting');
+		columnsToAlter['drop'] = {};
+	}
+}

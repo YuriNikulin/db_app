@@ -146,6 +146,19 @@ body,html {
 	box-shadow: inset 0px 0px 5px 5px rgba(255,255,255,.2);
 }
 
+.btn--warning {
+	background-color: #CF3722;
+	color: #fff;
+}
+
+.btn--warning:hover {
+	background-color: #F04129;
+}
+
+.btn--warning:active {
+	box-shadow: inset 0px 0px 5px 5px rgba(255,255,255,.2);
+}
+
 .notification {
 	background-color: #fff;
 	display: none;
@@ -280,6 +293,10 @@ body,html {
 
 .table:hover {
 	text-decoration: underline;
+}
+
+.tab-container {
+	overflow: auto;
 }
 
 .tabs__tab {

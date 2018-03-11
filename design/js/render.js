@@ -104,42 +104,54 @@ function renderTable(table, container) {
 
 function renderChangingButtons(container) {
 	var enableButton = basicRender('a', 'btn btn--primary ml mt', container),
+		removeButton = basicRender('a', 'btn btn--warning ml mt', container),
 		saveButton = basicRender('a', 'btn btn--success disabled ml mt', container);
 
 	enableButton.innerHTML = 'Enable changing mode';
+	removeButton.innerHTML = 'Enable deleting mode';
 	saveButton.innerHTML = 'Save changes';
-	
-	enableButton.addEventListener('click', function() {
-		if (saveButton.classList.contains('disabled')) {
-			enableButton.innerHTML = 'Disable changing mode';
-			saveButton.classList.remove('disabled');
-		} else {
-			enableButton.innerHTML = 'Enable changing mode';
-			saveButton.classList.add('disabled');
-		}
-	})
 
-	return {'change': enableButton, 'save': saveButton};
-
+	return {'change': enableButton, 'save': saveButton, 'remove': removeButton};
 }
 
 function renderTableDescription(data) {
-	console.log(data);
+
 	var fields = getFields(data),
 		mainContainer = document.querySelector('.table-structure'),
 		changingButtons = renderChangingButtons(mainContainer),
 		tableContainer = basicRender('div', 'e-table-container', mainContainer),
 		tableContent = basicRender('table', 'e-table', tableContainer),
 		activeTab = document.querySelector('.tabs__structure'),
-		fieldsTh, fieldsTr, td;
+		fieldsTh, fieldsTr, fieldsTbody, fieldsInput, td, inputs,
+		columnsToAlter = {},
+		changingMode;
 
 	activeTab.parent.open();
 
-	fieldsTh = basicRender('th', '', tableContent);
+	fieldsTh = basicRender('thead', '', tableContent);
 	fieldsTr = basicRender('tr', '', fieldsTh);
 	for (var i in fields) {
-		td = basicRender('td', '', fieldsTr);
+		td = basicRender('th', '', fieldsTr);
 		td.innerHTML = i;
 	}
+	
+	fields = Object.keys(fields);
+	fieldsTbody = basicRender('tbody', '', tableContent);
+
+	for (i in data) {
+		fieldsTr = basicRender('tr', '', fieldsTbody);
+		fieldsTr.dataset.column = data[i][fields[0]];
+
+		for (var j = 0; j < fields.length; j++) {
+			fieldsTd = basicRender('td', '', fieldsTr);
+			fieldsInput = basicRender('input', '', fieldsTd);
+			fieldsInput.value = data[i][fields[j]];
+			fieldsInput.dataset.value = data[i][fields[j]];
+			fieldsInput.dataset.parameter = fields[j];
+			fieldsInput.disabled = true;
+		}
+	}
+
+	altering(changingButtons, tableContent, fields);
 	
 }
