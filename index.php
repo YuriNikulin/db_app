@@ -1,17 +1,12 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-	<meta charset="UTF-8">
-	<title>Document</title>
-</head>
+<?php 
+	session_start();
+	include 'views/head.php';
+?>
 <body>
-	Hello!
-	<div>
-		<form method="post" action="func.php">
-			<input type="text" name="username" placeholder="Username">
-			<input type="password" name="password" placeholder="Password">
-			<input type="submit" name="submit" placeholder="Submit">
-		</form>
-	</div>
+	<?php include 'views/login.php'; ?>
+
+<script src="design/js/common.js"></script>
+<script src="design/js/scripts.js"></script>
+<script src="design/js/render.js"></script>
+
 </body>
-</html>

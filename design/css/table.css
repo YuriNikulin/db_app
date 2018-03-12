@@ -1,0 +1,38 @@
+.e-table-container {
+	padding: 15px;
+}
+
+.e-table td,
+.e-table th {
+	padding: 8px 15px;
+	text-align: center;
+	border: 1px solid #D8D8D8;
+	min-width: 100px;
+	max-width: 300px;
+	vertical-align: middle;
+}
+
+.e-table td {
+	padding: 3px 5px;
+}
+
+.e-table input {
+	display: block;
+	width: 100%;
+	background: none;
+	border: none;
+	padding: 5px 10px;
+}
+
+.e-table.altering input,
+.add input {
+	background: #F2F4F7;
+}
+
+.e-table.deleting input {
+	cursor: pointer;
+}
+
+.e-table.deleting tbody .delete {
+	background-color: #E9AFA7;
+}

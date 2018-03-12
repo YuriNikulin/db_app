@@ -1,0 +1,11 @@
+.login {
+	padding: 15px;
+	transition: .3s ease-in-out;
+	opacity: 0;
+	display: none;
+	box-shadow: 0px 0px 20px rgba(0,0,0,.1);
+}
+
+.login.shown {
+	opacity: 1;
+}
