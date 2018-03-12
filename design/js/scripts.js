@@ -151,6 +151,115 @@ function hideElem(elem, deleteElem) {
 	}, animDuration)
 }
 
+function showOverlay() {
+	var overlay = basicRender('div', 'overlay', body);
+	showElem(overlay);
+	return overlay;
+}
+
+function hideOverlay() {
+	var elems = body.querySelectorAll('.overlay'); 
+
+	for (var i = 0; i < elems.length; i++) {
+		hideElem(elems[i]);
+	}
+}
+
+function showPopup(content, containerClass) {
+	var overlay = showOverlay();
+	var container = basicRender('div', containerClass + ' popup', body);
+	container.appendChild(content);
+
+	if (content.querySelector('.focus')) {
+		content.querySelector('.focus').focus();
+	}
+
+	overlay.addEventListener('click', function() {
+		hidePopup(container);
+	})
+
+	showElem(container);
+	return container;
+}
+
+function hidePopup(elem) {
+	if (!elem) {
+		return 0;
+	}
+
+	hideOverlay();
+	hideElem(elem, true);
+}
+
+function createDatabase() {
+	var mainContainer = basicRender('div', ''),
+		inputContainer = basicRender('div', 'input-container', mainContainer),
+		label = basicRender('label', 'input-label title h3', inputContainer),
+		input = basicRender('input', 'input focus', inputContainer),
+		buttonsContainer = basicRender('div', 'input-container', mainContainer),
+		create = basicRender('a', 'btn btn--success', buttonsContainer),
+		cancel = basicRender('a', 'btn btn--warning ml', buttonsContainer),
+		answer;
+
+	label.innerHTML = 'Enter name for database';
+	create.innerHTML = 'Create';
+	cancel.innerHTML = 'Cancel';
+
+	var popup = showPopup(mainContainer, 'create-db');	
+
+	cancel.onclick = function() {
+		hidePopup(popup);
+	}
+
+	create.onclick = function() {
+		var parameters = '?script=query.php&mode=write&sql=CREATE DATABASE ' + input.value;
+		xmlhttp = new XMLHttpRequest();
+
+		xmlhttp.onload = function() {
+			answer = JSON.parse(this.response);
+			if (answer.success) {
+				fetchAllDb();
+			} else {
+				showNotification(answer.msg, 4000);
+			}
+
+		hidePopup(popup);
+	}
+
+	xmlhttp.open("GET", 'func.php' + parameters, true);
+	xmlhttp.send();
+	}
+}
+
+function sendSql(sql, mode) {
+	var parameters = '?script=query.php&mode=' + mode + '&sql=' + sql;
+	xmlhttp = new XMLHttpRequest();
+	xmlhttp.open("GET", 'func.php' + parameters, true);
+	xmlhttp.send();
+}
+
+function getUserAcception(msg, func) {
+	var mainContainer = basicRender('div', ''),
+		text = basicRender('h3', 'h3 mb fwn', mainContainer),
+		buttonsContainer = basicRender('div', 'input-container tac', mainContainer),
+		accept = basicRender('a', 'btn btn--success', buttonsContainer),
+		cancel = basicRender('a', 'btn btn--warning ml', buttonsContainer),
+		popup = showPopup(mainContainer);
+
+	text.innerHTML = msg;
+	accept.innerHTML = 'Accept';
+	cancel.innerHTML = 'Cancel';
+
+	cancel.onclick = function() {
+		hidePopup(popup);
+	}
+
+	accept.onclick = function() {
+		hidePopup(popup);
+		func();
+	}
+} 
+
 function fetchAllDb() {
 	var mainContainer = renderMainContainer(),
 		fadParameters, fadAnswer;
@@ -164,11 +273,13 @@ function fetchAllDb() {
 						title = basicRender('h3', 'title h3 content__title', container),
 						dbListContainer = basicRender('div', 'db-list', container),
 						dbCreateContainer = basicRender('div', 'tac db__create-container', container),
-						dbCreate = basicRender('a', 'btn btn--primary db__create action action__create-db', dbCreateContainer);
-
+						dbCreate = basicRender('a', 'btn btn--success db__create action action__create-db', dbCreateContainer);
 
 					title.innerHTML = 'Databases';
 					dbCreate.innerHTML = 'Create database';	
+					dbCreate.onclick = function() {
+						createDatabase();
+					}
 
 					fixHeight(dbListContainer);
 					renderRightContainer();

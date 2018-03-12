@@ -77,13 +77,29 @@ function renderRightContainer(dbName, tableName) {
 function renderDb(db, container) {
 	var dbContainer,
 		dbTitle,
-		dbTables;
+		dbTables,
+		dbDrop;
 
 	dbContainer = basicRender('div', 'db', container);
 	dbContainer.dataset.db = db;
 
 	dbTitle = basicRender('a', 'db__title', dbContainer);
 	dbTitle.innerHTML = db;
+
+	dbDrop = basicRender('a', 'db__drop', dbTitle);
+	dbDrop.innerHTML = 'Drop database';
+
+	dbDrop.onclick = function(event) {
+		event.stopPropagation();
+		var db = findParent(this, 'db').dataset.db;
+		var msg = 'Are you sure you want to drop database '  + db + '?';
+
+		getUserAcception(msg, function() {
+			sendSql('DROP DATABASE ' + db, 'write');
+			fetchAllDb();
+		});
+	}
+
 	new Accordion(dbTitle, 300);
 	dbTitle.addEventListener('click', function() {
 		fetchAllTables(this);

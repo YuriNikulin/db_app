@@ -50,6 +50,10 @@ body,html {
 	text-align: right;
 }
 
+.fwn {
+	font-weight: normal;
+}
+
 .clearfix:after {
 	content: '';
 	display: block;
@@ -262,7 +266,21 @@ body,html {
 .db__title {
 	display: block;
 	padding: 10px 15px;
+	padding-right: 40px;
 	cursor: pointer;
+	position: relative;
+}
+
+.db__drop {
+	position: absolute;
+	top: 12px;
+	right: 10px;
+	font-size: 12px;
+	color: #CF3722;
+}
+
+.db__drop:hover {
+	text-decoration: underline;
 }
 
 .db__title:hover,
@@ -318,4 +336,37 @@ body,html {
 .tabs__tab:hover,
 .tabs__tab.active {
 	text-decoration: underline;
+}
+
+.popup {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+	background: #fff;
+	z-index: 1000;
+	padding: 15px;
+	transition: .3s ease-in-out;
+	opacity: 0;
+}
+
+.overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	z-index: 999;
+	background: rgba(0,0,0,.8);
+	transition: .3s ease-in-out;
+	opacity: 0;
+}
+
+.popup.shown,
+.overlay.shown {
+	opacity: 1;
+}
+
+.highlighted {
+	z-index: 1000;
 }
