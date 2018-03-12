@@ -114,7 +114,7 @@ function renderChangingButtons(container) {
 	return {'change': enableButton, 'save': saveButton, 'remove': removeButton};
 }
 
-function renderTableDescription(data) {
+function renderTableDescription(data, tableName) {
 
 	var fields = getFields(data),
 		mainContainer = document.querySelector('.table-structure'),
@@ -152,6 +152,6 @@ function renderTableDescription(data) {
 		}
 	}
 
-	altering(changingButtons, tableContent, fields);
+	altering(changingButtons, tableContent, tableName);
 	
 }

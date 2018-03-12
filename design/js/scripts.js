@@ -24,8 +24,8 @@ function login() {
 			lAnim = lAnswer.timer || notificationDuration;
 			showNotification(lAnswer.msg, lAnim);
 			if (lAnswer.success) {
-				fetchAllDb();
 				hideElem(lContainer);
+				fetchAllDb();
 			}
 		}
 		
@@ -231,7 +231,7 @@ function fetchTable(table, db) {
 		ftAnswer = JSON.parse(this.response);
 		if (ftAnswer.success) {
 			renderRightContainer(db, table);
-			renderTableDescription(ftAnswer.msg);
+			renderTableDescription(ftAnswer.msg, table);
 		}
 	}
 
@@ -259,15 +259,49 @@ function unionOfArrays(data) {
 	return obj;
 }
 
-function saveAndGenerateSqlStructure(data, mode) {
-	var localData = data,
-		query,
-		mode;
+function sqlATDC(data, table) {
+	var sql = 'ALTER TABLE ' + table + ' ',
+		tables = Object.keys(data);
 
-	console.log(data, mode);	
+	sql += 'DROP COLUMN ' + tables[0];
+		
+	for (var i = 1; i < tables.length; i++) {
+		sql += ', DROP COLUMN ' + tables[i];
+	}
+
+	return sql;
 }
 
-function altering(changingButtons, tableContent, fields) {
+function saveAndGenerateSqlStructure(data, mode, table) {
+	var localData = data,
+		mode,
+		sScript = '?script=query.php',
+		sSql, sMode, sParameters, sAnswer;
+
+	if (mode == 'drop') {
+		sSql = sqlATDC(data, table);
+		sMode = 'write';
+	}
+
+	sParameters = sScript + '&sql=' + sSql + '&mode=' + sMode,
+	console.log(sParameters);
+
+	xmlhttp = new XMLHttpRequest();
+
+	xmlhttp.onload = function() {
+		// sAnswer = JSON.parse(this.response);
+		sAnswer = this.response;
+		console.log(sAnswer);
+		if (sAnswer.success) {
+			
+		}
+	}
+
+	xmlhttp.open("GET", 'func.php' + sParameters, true);
+	xmlhttp.send();
+}
+
+function altering(changingButtons, tableContent, tableName) {
 	var changingMode = false,
 		rows,
 		columnsToAlter = {};
@@ -280,6 +314,7 @@ function altering(changingButtons, tableContent, fields) {
 			
 
 			if (this == changingButtons.change && changingMode != 'alter') {
+				this.innerHTML = 'Disable altering mode';
 				changingMode = 'alter';
 				tableContent.classList.add('altering');
 				changingButtons.save.classList.remove('disabled');
@@ -295,6 +330,7 @@ function altering(changingButtons, tableContent, fields) {
 
 			} else if (this == changingButtons.remove && changingMode != 'drop') {
 				changingMode = 'drop';
+				this.innerHTML = 'Disable deleting mode';
 				tableContent.classList.add('deleting');
 				changingButtons.save.classList.remove('disabled');
 				resetAltering(inputs, tableContent);
@@ -312,7 +348,7 @@ function altering(changingButtons, tableContent, fields) {
 				}
 
 			} else if (this == changingButtons.save) {
-				saveAndGenerateSqlStructure(columnsToAlter, changingMode);
+				saveAndGenerateSqlStructure(columnsToAlter, changingMode, tableName);
 				changingMode = false;
 				changingButtons.save.classList.add('disabled');
 				resetAltering(inputs, tableContent);
@@ -332,6 +368,7 @@ function altering(changingButtons, tableContent, fields) {
 			items[i].disabled = true;
 			items[i].value = items[i].dataset.value;
 		}
+		changingButtons.change.innerHTML = 'Enable altering mode';
 		container.classList.remove('altering');
 		columnsToAlter = {};
 	}
@@ -340,7 +377,7 @@ function altering(changingButtons, tableContent, fields) {
 		for (var i = 0; i < items.length; i++) {
 			items[i].classList.remove('delete');
 		}
-
+		changingButtons.remove.innerHTML = 'Enable deleting mode';	
 		container.classList.remove('deleting');
 		columnsToAlter = {};
 	}
