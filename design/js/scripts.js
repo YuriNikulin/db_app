@@ -231,7 +231,7 @@ function fetchTable(table, db) {
 		ftAnswer = JSON.parse(this.response);
 		if (ftAnswer.success) {
 			renderRightContainer(db, table);
-			renderTableDescription(ftAnswer.msg, table);
+			renderTableDescription(ftAnswer.msg, table, db);
 		}
 	}
 
@@ -272,6 +272,43 @@ function sqlATDC(data, table) {
 	return sql;
 }
 
+function sqlATA(data, table) {
+	if (!data.length) {
+		return 0;
+	}
+
+	var sql = 'ALTER TABLE ' + table + ' ',
+		isFirst = true;
+
+	sql += generate(data[0]);
+	isFirst = false;
+	
+	for (var i = 1; i < data.length; i++) {
+		sql += generate(data[i]);
+	}
+
+	console.log(sql);
+
+
+	function generate(data) {
+		var localSql = 'ADD COLUMN ';
+
+		if (!isFirst) {
+			localSql = ', ' + localSql;
+		}
+
+		for (var i in data) {
+			if (data[i]) {
+				localSql += data[i] + ' ';
+			}
+		}
+
+		return localSql;
+	}
+
+	return sql;
+}
+
 function saveAndGenerateSqlStructure(data, mode, table) {
 	var localData = data,
 		mode,
@@ -280,6 +317,25 @@ function saveAndGenerateSqlStructure(data, mode, table) {
 
 	if (mode == 'drop') {
 		sSql = sqlATDC(data, table);
+		sMode = 'write';
+
+	} else if (mode == 'add') {
+		var addedRows = [],
+			count = 0;
+
+		for (var i in data) {
+			var items = data[i].childNodes;
+			addedRows[count] = {};
+
+			for (var j = 0; j < items.length; j++) {
+				var input = items[j].firstChild,
+					parameter = input.dataset.parameter;
+					addedRows[count][parameter] = input.value; 
+			}
+
+			count++;
+		}
+		sSql = sqlATA(addedRows, table);
 		sMode = 'write';
 	}
 
@@ -301,24 +357,26 @@ function saveAndGenerateSqlStructure(data, mode, table) {
 	xmlhttp.send();
 }
 
-function altering(changingButtons, tableContent, tableName) {
+function altering(changingButtons, tableContent, tableName, fields) {
 	var changingMode = false,
 		rows,
-		columnsToAlter = {};
+		columnsToAlter = {},
+		newCount = 0,
+		db = tableContent.dataset.db;
 
 	inputs = tableContent.querySelectorAll('input');
 	rows = tableContent.querySelectorAll('tbody tr');	
 
 	for (var i in changingButtons) {
 		changingButtons[i].addEventListener('click', function() {
-			
 
 			if (this == changingButtons.change && changingMode != 'alter') {
-				this.innerHTML = 'Disable altering mode';
+				this.innerHTML = 'Disable changing mode';
 				changingMode = 'alter';
 				tableContent.classList.add('altering');
 				changingButtons.save.classList.remove('disabled');
 				resetDeleting(rows, tableContent);
+				resetAdding(tableContent);
 
 				for (i = 0; i < inputs.length; i++) {
 					inputs[i].disabled = false;
@@ -334,6 +392,7 @@ function altering(changingButtons, tableContent, tableName) {
 				tableContent.classList.add('deleting');
 				changingButtons.save.classList.remove('disabled');
 				resetAltering(inputs, tableContent);
+				resetAdding(tableContent);
 
 				for (i = 0; i < rows.length; i++) {
 					rows[i].onclick = function() {
@@ -347,18 +406,32 @@ function altering(changingButtons, tableContent, tableName) {
 					}
 				}
 
-			} else if (this == changingButtons.save) {
+			} else if (this == changingButtons.add) {
+				if (changingMode != 'add') {
+					resetAltering(inputs, tableContent);
+					resetDeleting(rows, tableContent);
+				}
+				changingMode = 'add';
+				changingButtons.save.classList.remove('disabled');
+				columnsToAlter[newCount] = renderNewRow(tableContent, fields);
+				newCount++;
+			} 
+
+			else if (this == changingButtons.save) {
 				saveAndGenerateSqlStructure(columnsToAlter, changingMode, tableName);
+				fetchTable(tableName, db);
 				changingMode = false;
 				changingButtons.save.classList.add('disabled');
 				resetAltering(inputs, tableContent);
 				resetDeleting(rows, tableContent);
+				resetAdding(tableContent);
 
 			} else {
 				changingMode = false;
 				changingButtons.save.classList.add('disabled');
 				resetAltering(inputs, tableContent);
 				resetDeleting(rows, tableContent);
+				resetAdding(tableContent);
 			}
 		}) 	
 	}
@@ -366,9 +439,13 @@ function altering(changingButtons, tableContent, tableName) {
 	function resetAltering(items, container) {
 		for (var i = 0; i < items.length; i++) {
 			items[i].disabled = true;
-			items[i].value = items[i].dataset.value;
+			if (items[i].dataset.value != 'null'){
+				items[i].value = items[i].dataset.value;
+			} else {
+				items[i].value = '';
+			}
 		}
-		changingButtons.change.innerHTML = 'Enable altering mode';
+		changingButtons.change.innerHTML = 'Enable changing mode';
 		container.classList.remove('altering');
 		columnsToAlter = {};
 	}
@@ -380,5 +457,12 @@ function altering(changingButtons, tableContent, tableName) {
 		changingButtons.remove.innerHTML = 'Enable deleting mode';	
 		container.classList.remove('deleting');
 		columnsToAlter = {};
+	}
+
+	function resetAdding(container) {
+		var items = container.querySelectorAll('.add');
+		for (var i = 0; i < items.length; i++) {
+			// items[i].parentNode.removeChild(items[i]);
+		}
 	}
 }

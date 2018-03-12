@@ -103,18 +103,20 @@ function renderTable(table, container) {
 }
 
 function renderChangingButtons(container) {
-	var enableButton = basicRender('a', 'btn btn--primary ml mt', container),
+	var newButton = basicRender('a', 'btn btn--primary ml mt', container),
+		enableButton = basicRender('a', 'btn btn--primary ml mt', container),
 		removeButton = basicRender('a', 'btn btn--warning ml mt', container),
 		saveButton = basicRender('a', 'btn btn--success disabled ml mt', container);
 
+	newButton.innerHTML = 'Add row';
 	enableButton.innerHTML = 'Enable changing mode';
 	removeButton.innerHTML = 'Enable deleting mode';
 	saveButton.innerHTML = 'Save changes';
 
-	return {'change': enableButton, 'save': saveButton, 'remove': removeButton};
+	return {'change': enableButton, 'save': saveButton, 'remove': removeButton, 'add': newButton};
 }
 
-function renderTableDescription(data, tableName) {
+function renderTableDescription(data, tableName, db) {
 
 	var fields = getFields(data),
 		mainContainer = document.querySelector('.table-structure'),
@@ -126,6 +128,7 @@ function renderTableDescription(data, tableName) {
 		columnsToAlter = {},
 		changingMode;
 
+	tableContent.dataset.db = db;
 	activeTab.parent.open();
 
 	fieldsTh = basicRender('thead', '', tableContent);
@@ -152,6 +155,18 @@ function renderTableDescription(data, tableName) {
 		}
 	}
 
-	altering(changingButtons, tableContent, tableName);
-	
+	altering(changingButtons, tableContent, tableName, fields);
+}
+
+function renderNewRow(container, fields) {
+	var newRow = basicRender('tr', 'add', container),
+		td, input;
+
+	for (var i = 0; i < fields.length; i++) {
+		td = basicRender('td', '', newRow);
+		input = basicRender('input', '', td);
+		input.dataset.parameter = fields[i];
+	}	
+
+	return newRow;
 }

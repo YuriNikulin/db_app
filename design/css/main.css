@@ -299,6 +299,10 @@ body,html {
 	overflow: auto;
 }
 
+.tab-content .btn {
+	font-size: 15px;
+}
+
 .tabs__tab {
 	display: inline-block;
 	width: 50%;

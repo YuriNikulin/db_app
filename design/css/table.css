@@ -24,7 +24,8 @@
 	padding: 5px 10px;
 }
 
-.e-table.altering input {
+.e-table.altering input,
+.add input {
 	background: #F2F4F7;
 }
 
