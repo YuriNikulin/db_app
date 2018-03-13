@@ -170,10 +170,9 @@ function renderNewTableInterface(db, tableName) {
 	alteringObj.changingButtons.add.click();
 }
 
-function renderTableDescription(data, tableName, db) {
+function renderTableDescription(data, tableName, db, mainContainer, alteringFunc) {
 
 	var fields = getFields(data),
-		mainContainer = document.querySelector('.table-structure'),
 		changingButtons = renderChangingButtons(mainContainer, {'add': true, 'alter': true, 'remove': true, 'save': true}),
 		tableContainer = basicRender('div', 'e-table-container', mainContainer),
 		tableContent = basicRender('table', 'e-table', tableContainer),
@@ -214,7 +213,7 @@ function renderTableDescription(data, tableName, db) {
 		var dropTableButton = basicRender('a', 'btn btn--warning flr mr mb', mainContainer);
 			dropTableButton.innerHTML = 'Drop table 	' + tableName;
 			dropTableButton.onclick = function() {
-				getUserAcception('Are you sure you want to drop table ' + tableName, function() {
+				getUserAcception('Are you sure you want to drop table ' + tableName + '?', function() {
 					sendSql('DROP TABLE ' + tableName, 'write');
 					var dbItem = document.querySelector('[data-db=' + db + '].db'),
 						dbTitle = dbItem.querySelector('.db__title'),
@@ -232,10 +231,7 @@ function renderTableDescription(data, tableName, db) {
 				});
 			}
 		}
-
-	
-
-	altering(changingButtons, tableContent, tableName, fields, saveAndGenerateSqlStructure);
+	altering(changingButtons, tableContent, tableName, fields, alteringFunc);
 }
 
 function renderNewRow(container, fields) {

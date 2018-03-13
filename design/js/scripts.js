@@ -476,13 +476,13 @@ function fetchTable(table, db) {
 		ftAnswer;
 
 	xmlhttp = new XMLHttpRequest();
-
 	xmlhttp.onload = function() {
 		try {
 			ftAnswer = JSON.parse(this.response);
 			if (ftAnswer.success) {
 				renderRightContainer(true, db, table);
-				renderTableDescription(ftAnswer.msg, table, db);
+				renderTableDescription(ftAnswer.msg, table, db, document.querySelector('.table-structure'), saveAndGenerateSqlStructure);
+				fetchTableContent(table, db);
 			}
 		} catch(error) {
 			console.log(this.response);
@@ -493,6 +493,31 @@ function fetchTable(table, db) {
 
 	xmlhttp.open("GET", 'func.php' + ftParameters, true);
 	xmlhttp.send();
+}
+
+function fetchTableContent(table, db) {
+	var ftcScript = '?script=query.php',
+		ftcSql = ' SELECT * FROM ' + table,
+		ftcMode = '&mode=read',
+		ftcParameters = ftcScript + '&use=' + db + '&sql=' + ftcSql + ftcMode,
+		ftcAnswer;
+
+	xmlhttp = new XMLHttpRequest();
+	xmlhttp.onload = function() {
+		try {
+			ftcAnswer = JSON.parse(this.response);
+			if (ftcAnswer.success) {
+				renderTableDescription(ftcAnswer.msg, table, db, document.querySelector('.table-content'), saveAndGenerateSqlContent);
+			}
+		} catch(error) {
+			console.log(this.response);
+			return 0;
+		}
+		
+	}
+
+	xmlhttp.open("GET", 'func.php' + ftcParameters, true);
+	xmlhttp.send();	
 }
 
 function getFields(data) {
@@ -570,6 +595,60 @@ function sqlCT(data, table) {
 	return sql;
 }
 
+function sqlATM(data, table) {
+	var rowsToReplace = [],
+		sql = '', 
+		rowsToMove = [];
+
+	if (!data.length) {
+		return 0;
+	}
+	
+	for (var i in data) {
+		if (data[i].oldPK != data[i]['Field']) {
+			rowsToReplace.push(data[i]);
+		}
+	}
+
+	if (rowsToReplace.length) {
+		sql += 'ALTER TABLE ' + table + ' ';
+		for (i = 0; i < rowsToReplace.length; i++) {
+			data.splice(data.indexOf(rowsToReplace[i]), 1);
+			sql += 'DROP COLUMN ' + rowsToReplace[i].oldPK;
+			if (rowsToReplace.length - i > 1) {
+				sql += ', '
+			}
+		}
+		sql += '; ';
+		sql += sqlATA(rowsToReplace, table) + '; ';
+	}
+
+	if (data.length) {
+		sql += 'ALTER TABLE ' + table + ' ';
+
+		for (i = 0; i < data.length; i++) {
+			sql += generate(data[i]);
+			if (data.length - i > 1) {
+				sql += ', ';
+			}
+		}
+
+		sql += ';';
+	}
+
+	function generate(data) {
+		var localSql = 'MODIFY ';
+
+		for (var i in data) {
+			localSql += sqlExceptions(data[i], i);
+		}
+
+		return localSql;
+	}
+
+	return sql;
+}
+
 function sqlATA(data, table) {
 	if (!data.length) {
 		return 0;
@@ -593,20 +672,7 @@ function sqlATA(data, table) {
 		}
 
 		for (var i in data) {
-			if (data[i]) {
-				if ((i == 'Null' && data[i] == 'NO')) {
-					localSql += 'NOT NULL ';
-
-				} else if (i == 'Null' && data[i] == 'YES') {
-					localSql += 'NULL ';
-
-				} else if (i == 'Default') {
-					localSql += 'DEFAULT ' + "'" + data[i] + "'" + ' ';
-
-				} else {
-					localSql += data[i] + ' ';
-				}
-			}
+			localSql += sqlExceptions(data[i], i);
 		}
 
 		return localSql;
@@ -615,18 +681,41 @@ function sqlATA(data, table) {
 	return sql;
 }
 
-function parseTr(data) {
+function sqlExceptions(data, i) {
+	var localSql = '';
+	if (data && i) {
+		if (i == 'oldPK') {
+			return '';
+		}
+		if ((i == 'Null' && data == 'NO')) {
+			localSql += 'NOT NULL ';
+		} else if (i == 'Null' && data == 'YES') {
+			localSql += 'NULL ';
+		} else if (i == 'Default') {
+			localSql += 'DEFAULT ' + "'" + data + "'" + ' ';
+		} else if (i == 'Key' && data == 'PRI') {
+			localSql += 'PRIMARY KEY ';
+		} else {
+			localSql += data + ' ';
+		}
+	}
+	return localSql;
+}
+
+function parseTr(data, savePK) {
 	var addedRows = [],
 		count = 0,
 		parameter;
 	for (var i in data) {
 		var items = data[i].childNodes;
 		addedRows[count] = {};
-
 		for (var j = 0; j < items.length; j++) {
 			var input = items[j].firstChild,
 				parameter = input.dataset.parameter;
 				addedRows[count][parameter] = input.value; 
+		}
+		if (savePK) {
+			addedRows[count]['oldPK'] = i;
 		}
 		count++;
 	}
@@ -654,11 +743,16 @@ function saveAndGenerateSqlNewTable(data, mode, table, db) {
 
 }
 
-function saveAndGenerateSqlStructure(data, mode, table) {
+function saveAndGenerateSqlContent() {
+	
+}
+
+function saveAndGenerateSqlStructure(data, mode, table, db) {
 	var localData = data,
 		mode,
 		sScript = '?script=query.php',
 		sSql, sMode, sParameters, sAnswer;
+
 
 	if (mode == 'drop') {
 		sSql = sqlATDC(data, table);
@@ -671,6 +765,10 @@ function saveAndGenerateSqlStructure(data, mode, table) {
 		addedRows = parseTr(data);
 		sSql = sqlATA(addedRows, table);
 		sMode = 'write';
+	} else if (mode == 'alter') {
+		addedRows = parseTr(data, true);
+		sMode = 'write';
+		sSql = sqlATM(addedRows, table);
 	}
 
 	sParameters = sScript + '&sql=' + sSql + '&mode=' + sMode,
@@ -683,6 +781,8 @@ function saveAndGenerateSqlStructure(data, mode, table) {
 		console.log(sAnswer);
 		if (!sAnswer.success) {
 			showNotification(sAnswer.msg, 6000);
+		} else if(table && db) {
+			fetchTable(table, db)
 		}
 	}
 
@@ -753,11 +853,10 @@ function altering(changingButtons, tableContent, tableName, fields, alteringFunc
 			} 
 
 			else if (this == changingButtons.save) {
-				alteringFunc(columnsToAlter, changingMode, tableName, additionalData);
-
-				if (tableName && db) {
-					fetchTable(tableName, db);
+				if (!additionalData && db) {
+					additionalData = db;
 				}
+				alteringFunc(columnsToAlter, changingMode, tableName, additionalData);
 				
 				changingMode = false;
 				changingButtons.save.classList.add('disabled');
