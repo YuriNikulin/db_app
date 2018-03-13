@@ -170,10 +170,9 @@ function renderNewTableInterface(db, tableName) {
 	alteringObj.changingButtons.add.click();
 }
 
-function renderTableDescription(data, tableName, db) {
+function renderTableDescription(data, tableName, db, mainContainer, alteringFunc) {
 
 	var fields = getFields(data),
-		mainContainer = document.querySelector('.table-structure'),
 		changingButtons = renderChangingButtons(mainContainer, {'add': true, 'alter': true, 'remove': true, 'save': true}),
 		tableContainer = basicRender('div', 'e-table-container', mainContainer),
 		tableContent = basicRender('table', 'e-table', tableContainer),
@@ -232,10 +231,7 @@ function renderTableDescription(data, tableName, db) {
 				});
 			}
 		}
-
-	
-
-	altering(changingButtons, tableContent, tableName, fields, saveAndGenerateSqlStructure);
+	altering(changingButtons, tableContent, tableName, fields, alteringFunc);
 }
 
 function renderNewRow(container, fields) {

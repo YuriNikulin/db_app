@@ -476,13 +476,13 @@ function fetchTable(table, db) {
 		ftAnswer;
 
 	xmlhttp = new XMLHttpRequest();
-
 	xmlhttp.onload = function() {
 		try {
 			ftAnswer = JSON.parse(this.response);
 			if (ftAnswer.success) {
 				renderRightContainer(true, db, table);
-				renderTableDescription(ftAnswer.msg, table, db);
+				renderTableDescription(ftAnswer.msg, table, db, document.querySelector('.table-structure'), saveAndGenerateSqlStructure);
+				fetchTableContent(table, db);
 			}
 		} catch(error) {
 			console.log(this.response);
@@ -493,6 +493,31 @@ function fetchTable(table, db) {
 
 	xmlhttp.open("GET", 'func.php' + ftParameters, true);
 	xmlhttp.send();
+}
+
+function fetchTableContent(table, db) {
+	var ftcScript = '?script=query.php',
+		ftcSql = ' SELECT * FROM ' + table,
+		ftcMode = '&mode=read',
+		ftcParameters = ftcScript + '&use=' + db + '&sql=' + ftcSql + ftcMode,
+		ftcAnswer;
+
+	xmlhttp = new XMLHttpRequest();
+	xmlhttp.onload = function() {
+		try {
+			ftcAnswer = JSON.parse(this.response);
+			if (ftcAnswer.success) {
+				renderTableDescription(ftcAnswer.msg, table, db, document.querySelector('.table-content'), saveAndGenerateSqlContent);
+			}
+		} catch(error) {
+			console.log(this.response);
+			return 0;
+		}
+		
+	}
+
+	xmlhttp.open("GET", 'func.php' + ftcParameters, true);
+	xmlhttp.send();	
 }
 
 function getFields(data) {
@@ -716,6 +741,10 @@ function saveAndGenerateSqlNewTable(data, mode, table, db) {
 	});
 
 
+}
+
+function saveAndGenerateSqlContent() {
+	
 }
 
 function saveAndGenerateSqlStructure(data, mode, table, db) {
