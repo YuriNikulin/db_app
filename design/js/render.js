@@ -28,7 +28,7 @@ function emptyContent() {
 	content.parentNode.removeChild(content);
 }
 
-function renderRightContainer(dbName, tableName) {
+function renderRightContainer(toRenderTabs, dbName, tableName) {
 	var mainContent = document.querySelector('.content'),
 		rightContainer = basicRender('div', 'content-right', mainContent, true);
 
@@ -44,30 +44,35 @@ function renderRightContainer(dbName, tableName) {
 		tbSpan.innerHTML = 'Table: ';
 		tbValue.innerHTML = tableName;	
 	}
+
+	if (toRenderTabs) {	
+		var	rightHeader = basicRender('div', 'tabs', rightContainer),
+			tabContainer = basicRender('div', 'tab-container', rightContainer),
+			tableStructure = basicRender('div', 'table-structure tab-content', tabContainer),
+			tableContent = basicRender('div', 'table-content tab-content', tabContainer),
+			tabTableStructure = basicRender('h3', 'h3 content__title title tabs__tab tabs__structure', rightHeader),
+			tabTableContent = basicRender('h3', 'h3 content__title title tabs__tab tabs__content', rightHeader);
 		
-	var	rightHeader = basicRender('div', 'tabs', rightContainer),
-		tabContainer = basicRender('div', 'tab-container', rightContainer),
-		tableStructure = basicRender('div', 'table-structure tab-content', tabContainer),
-		tableContent = basicRender('div', 'table-content tab-content', tabContainer),
-		tabTableStructure = basicRender('h3', 'h3 content__title title tabs__tab tabs__structure', rightHeader),
-		tabTableContent = basicRender('h3', 'h3 content__title title tabs__tab tabs__content', rightHeader),
-		rightFooter = basicRender('div', 'db__create-container tar content-right-footer', rightContainer),
+		tabTableStructure.innerHTML = 'Table structure';	
+		tabTableContent.innerHTML = 'Table content';
+
+		new Tabs([
+			{
+				tab: tabTableStructure,
+				content: tableStructure
+			}, 
+
+			{
+				tab: tabTableContent,
+				content: tableContent
+			}
+		]);	
+	} else {
+		var tabContainer = basicRender('div', 'tab-container', rightContainer);
+	}
+
+	var rightFooter = basicRender('div', 'db__create-container tar content-right-footer', rightContainer),
 		logOut = basicRender('a', 'btn btn--primary logout', rightFooter);
-	
-	tabTableStructure.innerHTML = 'Table structure';	
-	tabTableContent.innerHTML = 'Table content';
-
-	new Tabs([
-		{
-			tab: tabTableStructure,
-			content: tableStructure
-		}, 
-
-		{
-			tab: tabTableContent,
-			content: tableContent
-		}
-	]);	
 
 	logOut.innerHTML = 'Log out';
 	logOut.addEventListener('click', endSession);
@@ -118,25 +123,58 @@ function renderTable(table, container) {
 	})
 }
 
-function renderChangingButtons(container) {
-	var newButton = basicRender('a', 'btn btn--primary ml mt', container),
-		enableButton = basicRender('a', 'btn btn--primary ml mt', container),
-		removeButton = basicRender('a', 'btn btn--warning ml mt', container),
-		saveButton = basicRender('a', 'btn btn--success disabled ml mt', container);
+function renderChangingButtons(container, data) {
+	var obj = {};
 
-	newButton.innerHTML = 'Add row';
-	enableButton.innerHTML = 'Enable changing mode';
-	removeButton.innerHTML = 'Enable deleting mode';
-	saveButton.innerHTML = 'Save changes';
+	if (data['add']) {
+		var addButton = basicRender('a', 'btn btn--primary ml mt', container);
+		addButton.innerHTML = 'Add row';
+		obj['add'] = addButton;
+	}
+	if (data['alter']) {
+		var alterButton = basicRender('a', 'btn btn--primary ml mt', container);
+		alterButton.innerHTML = 'Enable changing mode';
+		obj['change'] = alterButton;
+	}
+	if (data['remove']) {
+		var removeButton = basicRender('a', 'btn btn--warning ml mt', container);
+		removeButton.innerHTML = 'Enable deleting mode';
+		obj['remove'] = removeButton;
+	}
+	if (data['save']) {
+		var saveButton = basicRender('a', 'btn btn--success disabled ml mt', container);
+		saveButton.innerHTML = 'Save changes';
+		obj['save'] = saveButton;
+	}
+	
+	return obj;
+}
 
-	return {'change': enableButton, 'save': saveButton, 'remove': removeButton, 'add': newButton};
+function renderNewTableInterface(db, tableName) {
+	var container = document.querySelector('.table-structure'),
+		changingButtons = renderChangingButtons(container, {'add': true, 'save': true}),
+		tableContainer = basicRender('div', 'e-table-container', container),
+		tableContent = basicRender('table', 'e-table', tableContainer),
+		columnsToAlter, changingMode, fieldsTh, fieldsTr, fieldsTbody, fieldsInput, td, inputs;
+
+	fields = columnParameters;
+	
+	fieldsTh = basicRender('thead', '', tableContent);
+	fieldsTr = basicRender('tr', '', fieldsTh);
+	for (var i in fields) {
+		td = basicRender('th', '', fieldsTr);
+		td.innerHTML = i;
+	}
+
+	var alteringObj = altering(changingButtons, tableContent, tableName, Object.keys(fields), saveAndGenerateSqlNewTable, db);
+	alteringObj.changingButtons.add.click();
 }
 
 function renderTableDescription(data, tableName, db) {
 
 	var fields = getFields(data),
 		mainContainer = document.querySelector('.table-structure'),
-		changingButtons = renderChangingButtons(mainContainer),
+		changingButtons = renderChangingButtons(mainContainer, {'add': true, 'alter': true, 'remove': true, 'save': true}),
 		tableContainer = basicRender('div', 'e-table-container', mainContainer),
 		tableContent = basicRender('table', 'e-table', tableContainer),
 		activeTab = document.querySelector('.tabs__structure'),
@@ -164,6 +202,7 @@ function renderTableDescription(data, tableName, db) {
 		for (var j = 0; j < fields.length; j++) {
 			fieldsTd = basicRender('td', '', fieldsTr);
 			fieldsInput = basicRender('input', '', fieldsTd);
+			inputNavigation(fieldsInput);
 			fieldsInput.value = data[i][fields[j]];
 			fieldsInput.dataset.value = data[i][fields[j]];
 			fieldsInput.dataset.parameter = fields[j];
@@ -171,7 +210,32 @@ function renderTableDescription(data, tableName, db) {
 		}
 	}
 
-	altering(changingButtons, tableContent, tableName, fields);
+	if (tableName && db) {
+		var dropTableButton = basicRender('a', 'btn btn--warning flr mr mb', mainContainer);
+			dropTableButton.innerHTML = 'Drop table 	' + tableName;
+			dropTableButton.onclick = function() {
+				getUserAcception('Are you sure you want to drop table ' + tableName, function() {
+					sendSql('DROP TABLE ' + tableName, 'write');
+					var dbItem = document.querySelector('[data-db=' + db + '].db'),
+						dbTitle = dbItem.querySelector('.db__title'),
+						dbOld = dbItem.querySelector('.db-tables'),
+						dbOldItems = dbOld.childNodes;
+
+					dbItem.classList.remove('db--tables-rendered');
+					for (var i = 0; i < dbOldItems.length; i++) {
+						dbOldItems[i].parentNode.removeChild(dbOldItems[i]);
+					}
+
+					fetchAllTables(dbTitle);
+
+				renderRightContainer();
+				});
+			}
+		}
+
+	
+
+	altering(changingButtons, tableContent, tableName, fields, saveAndGenerateSqlStructure);
 }
 
 function renderNewRow(container, fields) {
@@ -181,6 +245,7 @@ function renderNewRow(container, fields) {
 	for (var i = 0; i < fields.length; i++) {
 		td = basicRender('td', '', newRow);
 		input = basicRender('input', '', td);
+		inputNavigation(input);
 		input.dataset.parameter = fields[i];
 	}	
 

@@ -83,13 +83,17 @@ function fixHeight(elem) {
 	window.addEventListener('resize', calc);
 }
 
-function showNotification(text, timer) {
+function showNotification(text, timer, important) {
 	var nContainer = document.createElement('div'),
 		nText = document.createElement('p'),
 		oldNotification = document.querySelectorAll('.notification');
 
 	nContainer.className = 'notification';
 	nContainer.appendChild(nText);
+
+	if (important) {
+		nContainer.classList.add('important');
+	}
 
 	nText.className = 'notification__text';
 	nText.innerHTML = text ? text : 'OK';
@@ -191,6 +195,77 @@ function hidePopup(elem) {
 	hideElem(elem, true);
 }
 
+function inputNavigation(input) {
+	var eventObj;
+	input.addEventListener('keydown', function(event) {
+		if (event.code == 'ShiftLeft' || event.key == 'Shift' || event.keyCode == 16) {
+			input.isShifted = true;
+		}
+		if (input.isShifted) {
+			if (event.code == 'ArrowRight' || event.key == 'ArrowRight' || event.keyCode == 39) {
+				inputNavigate('right', input);
+			} else if (event.code == 'ArrowLeft' || event.key == 'ArrowLeft' || event.keyCode == 37) {
+				inputNavigate('left', input);
+			} else if (event.code == 'ArrowUp' || event.key == 'ArrowUp' || event.keyCode == 38) {
+				inputNavigate('up', input);
+			} else if (event.code == 'ArrowDown' || event.key == 'ArrowDown' || event.keyCode == 40) {
+				inputNavigate('down', input);
+			} 
+		}
+	})
+
+	input.addEventListener('keyup', function() {
+		if (event.code == 'ShiftLeft' || event.key == 'Shift' || event.keyCode == 16) {
+			input.isShifted = false;
+		}
+	})
+}
+
+function inputNavigate(mode, input) {
+	var elem;
+	try {
+		if (mode == 'left') {
+			elem = input.parentNode.previousSibling.querySelector('input');
+		} else if (mode == 'right') {
+			elem = input.parentNode.nextSibling.querySelector('input');
+		} else if (mode == 'up' || mode == 'down') {
+			var td = input.parentNode,
+				tr = td.parentNode,
+				countNumber;
+
+			for (var i = 0; i < tr.childNodes.length; i++) {
+				if (tr.childNodes[i] == td) {
+					countNumber = i;
+				}
+			}
+
+			if (mode == 'up') {
+				elem = tr.previousSibling.childNodes[countNumber].querySelector('input');
+			} else {
+				elem = tr.nextSibling.childNodes[countNumber].querySelector('input');
+			}
+		}
+
+		if (elem) {
+			elem.focus();
+			elem.isShifted = true;
+		}
+	} catch(error) {
+		return 0;
+	}
+}
+
+function inputNavigateRight(input) {
+	try {
+		var rightInput = input.parentNode.nextSibling.querySelector('input');
+		if (rightInput) {
+			rightInput.focus();
+		}
+	} catch(error) {
+		return 0;
+	}
+}
+
 function createDatabase() {
 	var mainContainer = basicRender('div', ''),
 		inputContainer = basicRender('div', 'input-container', mainContainer),
@@ -231,11 +306,30 @@ function createDatabase() {
 	}
 }
 
-function sendSql(sql, mode) {
+function sendSql(sql, mode, use, successCallback) {
 	var parameters = '?script=query.php&mode=' + mode + '&sql=' + sql;
+	if (use) {
+		parameters += '&use=' + use;
+	}
 	xmlhttp = new XMLHttpRequest();
 	xmlhttp.open("GET", 'func.php' + parameters, true);
 	xmlhttp.send();
+
+	xmlhttp.onload = function() {
+		console.log(this.response);
+
+		try {
+			var answer = JSON.parse(this.response);
+			if (answer.success) {
+				successCallback();
+			} else {
+				shoNotification(answer.msg, 3000);
+			}
+		} catch(error) {
+			console.log(error);
+			return 0;
+		}
+	}
 }
 
 function getUserAcception(msg, func) {
@@ -282,7 +376,7 @@ function fetchAllDb() {
 					}
 
 					fixHeight(dbListContainer);
-					renderRightContainer();
+					renderRightContainer(true);
 
 					for (var i = 0; i < fadAnswer.db_list.length; i++) {
 						renderDb(fadAnswer.db_list[i], dbListContainer);
@@ -292,6 +386,41 @@ function fetchAllDb() {
 		
 		xmlhttp.open("GET", 'func.php' + fadParameters, true);
 		xmlhttp.send();
+}
+
+function newTableInterface(db) {
+	var popupContent = basicRender('div'),
+		popupTitleContainer = basicRender('div', 'input-container', popupContent),
+		popupTitle = basicRender('label', 'h3 title', popupTitleContainer),
+		popupInputContainer = basicRender('div', 'input-container', popupContent),
+		popupInput = basicRender('input', 'input focus', popupInputContainer),
+		popupButtonsContainer = basicRender('div', 'input-container', popupContent),
+		createButton = basicRender('a', 'btn btn--success', popupButtonsContainer),
+		cancelButton = basicRender('a', 'btn btn--warning ml', popupButtonsContainer);
+
+	popupTitle.innerHTML = 'Enter name for new table';
+	createButton.innerHTML = 'Create';
+	cancelButton.innerHTML = 'Cancel';
+
+	var popup = showPopup(popupContent);	
+
+	cancelButton.onclick = function() {
+		hidePopup(popup);
+		return 0;
+	};
+
+	createButton.onclick = function() {
+		var tableName = popupInput.value.match(/[^\s]/g);
+		if (!tableName) {
+			showNotification('You have entered an invalid name for table', 3000, true);
+		} else {
+			tableName = tableName.join('');
+			hidePopup(popup);
+			renderRightContainer(true, db, tableName);
+			renderNewTableInterface(db, tableName);
+			document.querySelector('.tabs__structure').parent.open();
+		}
+	}
 }
 
 function fetchAllTables(elem) {
@@ -310,21 +439,31 @@ function fetchAllTables(elem) {
 
 	xmlhttp = new XMLHttpRequest();
 	xmlhttp.onload = function() {
-		fatAnswer = JSON.parse(this.response);
-		if (fatAnswer.success) {
-			dbElem.classList.add('db--tables-rendered');
-			var tablesContainer = basicRender('div', 'tables', fatContainer);
-			var search = basicRender('input', 'mini-search', tablesContainer);
-			search.placeholder = 'Find table';
+		try {	
+			fatAnswer = JSON.parse(this.response);
+			if (fatAnswer.success) {
+				dbElem.classList.add('db--tables-rendered');
+				var tablesContainer = basicRender('div', 'tables', fatContainer);
+				var search = basicRender('input', 'mini-search', tablesContainer);
+				search.placeholder = 'Find table';
 
-			new MiniSearch(search, tablesContainer);
+				new MiniSearch(search, tablesContainer);
 
-			showElem(tablesContainer);
-			for (var i = 0; i < fatAnswer.msg.length; i++) {
-				renderTable(fatAnswer.msg[i], tablesContainer);
+				showElem(tablesContainer);
+				for (var i = 0; i < fatAnswer.msg.length; i++) {
+					renderTable(fatAnswer.msg[i], tablesContainer);
+				}
+				var newTableContainer = basicRender('div', 'tac mt mb table__create-container', tablesContainer),
+					newTable = basicRender('a', 'table__create btn btn--success', newTableContainer);
+				newTable.innerHTML = 'Create a new table';
+				newTable.onclick = function() {
+					newTableInterface(findParent(this, 'db').dataset.db);
+				}
 			}
+		} catch(error) {
+			console.log(this.response);
 		}
-	}
+	}	
 	xmlhttp.open("GET", 'func.php' + fatParameters, true);
 	xmlhttp.send();
 }
@@ -339,11 +478,17 @@ function fetchTable(table, db) {
 	xmlhttp = new XMLHttpRequest();
 
 	xmlhttp.onload = function() {
-		ftAnswer = JSON.parse(this.response);
-		if (ftAnswer.success) {
-			renderRightContainer(db, table);
-			renderTableDescription(ftAnswer.msg, table, db);
+		try {
+			ftAnswer = JSON.parse(this.response);
+			if (ftAnswer.success) {
+				renderRightContainer(true, db, table);
+				renderTableDescription(ftAnswer.msg, table, db);
+			}
+		} catch(error) {
+			console.log(this.response);
+			return 0;
 		}
+		
 	}
 
 	xmlhttp.open("GET", 'func.php' + ftParameters, true);
@@ -383,6 +528,48 @@ function sqlATDC(data, table) {
 	return sql;
 }
 
+function sqlCT(data, table) {
+	if (!data.length) {
+		return 0;
+	}
+	
+	var sql = 'CREATE TABLE ' + table + '(',
+		isFirst = true;
+
+	for (var i = 0; i < data.length; i++) {
+		sql += generate(data[i]);
+		if (data.length - i > 1) {
+			sql += ', ';
+		}
+	}
+
+	sql += ')';
+
+	function generate(data) {
+		var localSql = '';
+
+		for (var i in data) {
+			if (data[i]) {
+				if ((i == 'Null' && data[i] == 'NO')) {
+					localSql += 'NOT NULL ';
+
+				} else if (i == 'Null' && data[i] == 'YES') {
+					localSql += 'NULL ';
+
+				} else if (i == 'Default') {
+					localSql += 'DEFAULT ' + "'" + data[i] + "'" + ' ';
+
+				} else {
+					localSql += data[i] + ' ';
+				}
+			}
+		}
+		return localSql;
+	}
+
+	return sql;
+}
+
 function sqlATA(data, table) {
 	if (!data.length) {
 		return 0;
@@ -398,9 +585,6 @@ function sqlATA(data, table) {
 		sql += generate(data[i]);
 	}
 
-	console.log(sql);
-
-
 	function generate(data) {
 		var localSql = 'ADD COLUMN ';
 
@@ -410,7 +594,18 @@ function sqlATA(data, table) {
 
 		for (var i in data) {
 			if (data[i]) {
-				localSql += data[i] + ' ';
+				if ((i == 'Null' && data[i] == 'NO')) {
+					localSql += 'NOT NULL ';
+
+				} else if (i == 'Null' && data[i] == 'YES') {
+					localSql += 'NULL ';
+
+				} else if (i == 'Default') {
+					localSql += 'DEFAULT ' + "'" + data[i] + "'" + ' ';
+
+				} else {
+					localSql += data[i] + ' ';
+				}
 			}
 		}
 
@@ -418,6 +613,45 @@ function sqlATA(data, table) {
 	}
 
 	return sql;
+}
+
+function parseTr(data) {
+	var addedRows = [],
+		count = 0,
+		parameter;
+	for (var i in data) {
+		var items = data[i].childNodes;
+		addedRows[count] = {};
+
+		for (var j = 0; j < items.length; j++) {
+			var input = items[j].firstChild,
+				parameter = input.dataset.parameter;
+				addedRows[count][parameter] = input.value; 
+		}
+		count++;
+	}
+	return addedRows;
+}
+
+function saveAndGenerateSqlNewTable(data, mode, table, db) {
+		var addedRows = parseTr(data),
+			sql = sqlCT(addedRows, table);
+
+	sendSql(sql, 'write', db, function() {
+		var dbItem = document.querySelector('[data-db=' + db + '].db'),
+			dbTitle = dbItem.querySelector('.db__title'),
+			dbOld = dbItem.querySelector('.db-tables'),
+			dbOldItems = dbOld.childNodes;
+		dbItem.classList.remove('db--tables-rendered');
+		for (var i = 0; i < dbOldItems.length; i++) {
+			dbOldItems[i].parentNode.removeChild(dbOldItems[i]);
+		}
+
+		fetchAllTables(dbTitle);
+		fetchTable(table, db);
+	});
+
+
 }
 
 function saveAndGenerateSqlStructure(data, mode, table) {
@@ -434,18 +668,7 @@ function saveAndGenerateSqlStructure(data, mode, table) {
 		var addedRows = [],
 			count = 0;
 
-		for (var i in data) {
-			var items = data[i].childNodes;
-			addedRows[count] = {};
-
-			for (var j = 0; j < items.length; j++) {
-				var input = items[j].firstChild,
-					parameter = input.dataset.parameter;
-					addedRows[count][parameter] = input.value; 
-			}
-
-			count++;
-		}
+		addedRows = parseTr(data);
 		sSql = sqlATA(addedRows, table);
 		sMode = 'write';
 	}
@@ -456,11 +679,10 @@ function saveAndGenerateSqlStructure(data, mode, table) {
 	xmlhttp = new XMLHttpRequest();
 
 	xmlhttp.onload = function() {
-		// sAnswer = JSON.parse(this.response);
-		sAnswer = this.response;
+		sAnswer = JSON.parse(this.response);
 		console.log(sAnswer);
-		if (sAnswer.success) {
-			
+		if (!sAnswer.success) {
+			showNotification(sAnswer.msg, 6000);
 		}
 	}
 
@@ -468,12 +690,14 @@ function saveAndGenerateSqlStructure(data, mode, table) {
 	xmlhttp.send();
 }
 
-function altering(changingButtons, tableContent, tableName, fields) {
+function altering(changingButtons, tableContent, tableName, fields, alteringFunc, additionalData) {
 	var changingMode = false,
 		rows,
 		columnsToAlter = {},
 		newCount = 0,
 		db = tableContent.dataset.db;
+
+	tableContent.changingButtons = changingButtons;
 
 	inputs = tableContent.querySelectorAll('input');
 	rows = tableContent.querySelectorAll('tbody tr');	
@@ -529,13 +753,16 @@ function altering(changingButtons, tableContent, tableName, fields) {
 			} 
 
 			else if (this == changingButtons.save) {
-				saveAndGenerateSqlStructure(columnsToAlter, changingMode, tableName);
-				fetchTable(tableName, db);
+				alteringFunc(columnsToAlter, changingMode, tableName, additionalData);
+
+				if (tableName && db) {
+					fetchTable(tableName, db);
+				}
+				
 				changingMode = false;
 				changingButtons.save.classList.add('disabled');
 				resetAltering(inputs, tableContent);
 				resetDeleting(rows, tableContent);
-				resetAdding(tableContent);
 
 			} else {
 				changingMode = false;
@@ -548,6 +775,9 @@ function altering(changingButtons, tableContent, tableName, fields) {
 	}
 
 	function resetAltering(items, container) {
+		if (!changingButtons.change) {
+			return 0;
+		}
 		for (var i = 0; i < items.length; i++) {
 			items[i].disabled = true;
 			if (items[i].dataset.value != 'null'){
@@ -562,6 +792,9 @@ function altering(changingButtons, tableContent, tableName, fields) {
 	}
 
 	function resetDeleting(items, container) {
+		if (!changingButtons.remove) {
+			return 0;
+		}
 		for (var i = 0; i < items.length; i++) {
 			items[i].classList.remove('delete');
 		}
@@ -571,9 +804,15 @@ function altering(changingButtons, tableContent, tableName, fields) {
 	}
 
 	function resetAdding(container) {
+		if (!changingButtons.add) {
+			return 0;
+		}
 		var items = container.querySelectorAll('.add');
 		for (var i = 0; i < items.length; i++) {
-			// items[i].parentNode.removeChild(items[i]);
+			items[i].parentNode.removeChild(items[i]);
 		}
 	}
+
+	return tableContent;
+
 }

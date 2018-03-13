@@ -3,7 +3,15 @@ var pathPhpFunc = 'app/functions/fn_',
 	animDuration = 300,
 	windowHeight,
 	windowWidth,
-	notificationDuration = 4000;
+	notificationDuration = 4000,
+	columnParameters = {
+		'Field': 1,
+		'Type': 1,
+		'Null': 1,
+		'Key': 1,
+		'Default': 1,
+		'Extra': 1
+	};
 
 var MiniSearch = function(search, container) {
 	var elems, i;
@@ -14,7 +22,7 @@ var MiniSearch = function(search, container) {
 		var searchPhrase = this.value,
 			searchMask = new RegExp('.*' + searchPhrase + '.*', 'i');
 		for (i = 0; i < elems.length; i++) {
-			if (elems[i] == search) {
+			if (elems[i] == search || elems[i].classList.contains('table__create-container')) {
 				continue;
 			}
 
