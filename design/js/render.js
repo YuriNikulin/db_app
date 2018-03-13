@@ -214,7 +214,7 @@ function renderTableDescription(data, tableName, db) {
 		var dropTableButton = basicRender('a', 'btn btn--warning flr mr mb', mainContainer);
 			dropTableButton.innerHTML = 'Drop table 	' + tableName;
 			dropTableButton.onclick = function() {
-				getUserAcception('Are you sure you want to drop table ' + tableName, function() {
+				getUserAcception('Are you sure you want to drop table ' + tableName + '?', function() {
 					sendSql('DROP TABLE ' + tableName, 'write');
 					var dbItem = document.querySelector('[data-db=' + db + '].db'),
 						dbTitle = dbItem.querySelector('.db__title'),
