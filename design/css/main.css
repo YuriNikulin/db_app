@@ -54,6 +54,14 @@ body,html {
 	font-weight: normal;
 }
 
+.flr {
+	float: right;
+}
+
+.fll {
+	float: left;
+}
+
 .clearfix:after {
 	content: '';
 	display: block;

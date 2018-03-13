@@ -210,6 +210,31 @@ function renderTableDescription(data, tableName, db) {
 		}
 	}
 
+	if (tableName && db) {
+		var dropTableButton = basicRender('a', 'btn btn--warning flr mr mb', mainContainer);
+			dropTableButton.innerHTML = 'Drop table 	' + tableName;
+			dropTableButton.onclick = function() {
+				getUserAcception('Are you sure you want to drop table ' + tableName, function() {
+					sendSql('DROP TABLE ' + tableName, 'write');
+					var dbItem = document.querySelector('[data-db=' + db + '].db'),
+						dbTitle = dbItem.querySelector('.db__title'),
+						dbOld = dbItem.querySelector('.db-tables'),
+						dbOldItems = dbOld.childNodes;
+
+					dbItem.classList.remove('db--tables-rendered');
+					for (var i = 0; i < dbOldItems.length; i++) {
+						dbOldItems[i].parentNode.removeChild(dbOldItems[i]);
+					}
+
+					fetchAllTables(dbTitle);
+
+				renderRightContainer();
+				});
+			}
+		}
+
+	
+
 	altering(changingButtons, tableContent, tableName, fields, saveAndGenerateSqlStructure);
 }
 
