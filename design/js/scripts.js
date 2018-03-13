@@ -744,7 +744,7 @@ function saveAndGenerateSqlNewTable(data, mode, table, db) {
 }
 
 function saveAndGenerateSqlContent() {
-	
+
 }
 
 function saveAndGenerateSqlStructure(data, mode, table, db) {
@@ -795,7 +795,8 @@ function altering(changingButtons, tableContent, tableName, fields, alteringFunc
 		rows,
 		columnsToAlter = {},
 		newCount = 0,
-		db = tableContent.dataset.db;
+		db = tableContent.dataset.db, 
+		inputs;
 
 	tableContent.changingButtons = changingButtons;
 
@@ -814,6 +815,7 @@ function altering(changingButtons, tableContent, tableName, fields, alteringFunc
 				resetAdding(tableContent);
 
 				for (i = 0; i < inputs.length; i++) {
+
 					inputs[i].disabled = false;
 					inputs[i].onkeyup = function() {
 						var column = this.parentNode.parentNode;
