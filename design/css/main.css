@@ -176,6 +176,10 @@ body,html {
 	box-shadow: 0px 0px 20px rgba(0,0,0,.2);
 }
 
+.notification.important {
+	z-index: 1000;
+}
+
 .mini-search {
 	height: 35px;
 	width: 100%;

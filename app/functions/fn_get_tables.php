@@ -4,7 +4,7 @@
 	$password = $_SESSION["password"];
 	$dsn = "mysql:host=$config_db_host";
 
-	if (isset($_REQUEST["use"])) {
+	if (isset($_REQUEST["use"]) && $_REQUEST["use"] != "undefined") {
 		$_SESSION["use"] = $_REQUEST["use"];
 	}
 

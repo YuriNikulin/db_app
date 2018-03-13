@@ -83,13 +83,17 @@ function fixHeight(elem) {
 	window.addEventListener('resize', calc);
 }
 
-function showNotification(text, timer) {
+function showNotification(text, timer, important) {
 	var nContainer = document.createElement('div'),
 		nText = document.createElement('p'),
 		oldNotification = document.querySelectorAll('.notification');
 
 	nContainer.className = 'notification';
 	nContainer.appendChild(nText);
+
+	if (important) {
+		nContainer.classList.add('important');
+	}
 
 	nText.className = 'notification__text';
 	nText.innerHTML = text ? text : 'OK';
@@ -302,14 +306,29 @@ function createDatabase() {
 	}
 }
 
-function sendSql(sql, mode) {
+function sendSql(sql, mode, use, successCallback) {
 	var parameters = '?script=query.php&mode=' + mode + '&sql=' + sql;
+	if (use) {
+		parameters += '&use=' + use;
+	}
 	xmlhttp = new XMLHttpRequest();
 	xmlhttp.open("GET", 'func.php' + parameters, true);
 	xmlhttp.send();
 
 	xmlhttp.onload = function() {
 		console.log(this.response);
+
+		try {
+			var answer = JSON.parse(this.response);
+			if (answer.success) {
+				successCallback();
+			} else {
+				shoNotification(answer.msg, 3000);
+			}
+		} catch(error) {
+			console.log(error);
+			return 0;
+		}
 	}
 }
 
@@ -370,9 +389,38 @@ function fetchAllDb() {
 }
 
 function newTableInterface(db) {
-	renderRightContainer(true);
-	document.querySelector('.tabs__structure').parent.open();
-	renderNewTableInterface(db);
+	var popupContent = basicRender('div'),
+		popupTitleContainer = basicRender('div', 'input-container', popupContent),
+		popupTitle = basicRender('label', 'h3 title', popupTitleContainer),
+		popupInputContainer = basicRender('div', 'input-container', popupContent),
+		popupInput = basicRender('input', 'input focus', popupInputContainer),
+		popupButtonsContainer = basicRender('div', 'input-container', popupContent),
+		createButton = basicRender('a', 'btn btn--success', popupButtonsContainer),
+		cancelButton = basicRender('a', 'btn btn--warning ml', popupButtonsContainer);
+
+	popupTitle.innerHTML = 'Enter name for new table';
+	createButton.innerHTML = 'Create';
+	cancelButton.innerHTML = 'Cancel';
+
+	var popup = showPopup(popupContent);	
+
+	cancelButton.onclick = function() {
+		hidePopup(popup);
+		return 0;
+	};
+
+	createButton.onclick = function() {
+		var tableName = popupInput.value.match(/[^\s]/g);
+		if (!tableName) {
+			showNotification('You have entered an invalid name for table', 3000, true);
+		} else {
+			tableName = tableName.join('');
+			hidePopup(popup);
+			renderRightContainer(true, db, tableName);
+			renderNewTableInterface(db, tableName);
+			document.querySelector('.tabs__structure').parent.open();
+		}
+	}
 }
 
 function fetchAllTables(elem) {
@@ -391,27 +439,31 @@ function fetchAllTables(elem) {
 
 	xmlhttp = new XMLHttpRequest();
 	xmlhttp.onload = function() {
-		fatAnswer = JSON.parse(this.response);
-		if (fatAnswer.success) {
-			dbElem.classList.add('db--tables-rendered');
-			var tablesContainer = basicRender('div', 'tables', fatContainer);
-			var search = basicRender('input', 'mini-search', tablesContainer);
-			search.placeholder = 'Find table';
+		try {	
+			fatAnswer = JSON.parse(this.response);
+			if (fatAnswer.success) {
+				dbElem.classList.add('db--tables-rendered');
+				var tablesContainer = basicRender('div', 'tables', fatContainer);
+				var search = basicRender('input', 'mini-search', tablesContainer);
+				search.placeholder = 'Find table';
 
-			new MiniSearch(search, tablesContainer);
+				new MiniSearch(search, tablesContainer);
 
-			showElem(tablesContainer);
-			for (var i = 0; i < fatAnswer.msg.length; i++) {
-				renderTable(fatAnswer.msg[i], tablesContainer);
+				showElem(tablesContainer);
+				for (var i = 0; i < fatAnswer.msg.length; i++) {
+					renderTable(fatAnswer.msg[i], tablesContainer);
+				}
+				var newTableContainer = basicRender('div', 'tac mt mb table__create-container', tablesContainer),
+					newTable = basicRender('a', 'table__create btn btn--success', newTableContainer);
+				newTable.innerHTML = 'Create a new table';
+				newTable.onclick = function() {
+					newTableInterface(findParent(this, 'db').dataset.db);
+				}
 			}
-			var newTableContainer = basicRender('div', 'tac mt mb table__create-container', tablesContainer),
-				newTable = basicRender('a', 'table__create btn btn--success', newTableContainer);
-			newTable.innerHTML = 'Create a new table';
-			newTable.onclick = function() {
-				newTableInterface(findParent(this, 'db').dataset.db);
-			}
+		} catch(error) {
+			console.log(this.response);
 		}
-	}
+	}	
 	xmlhttp.open("GET", 'func.php' + fatParameters, true);
 	xmlhttp.send();
 }
@@ -426,11 +478,17 @@ function fetchTable(table, db) {
 	xmlhttp = new XMLHttpRequest();
 
 	xmlhttp.onload = function() {
-		ftAnswer = JSON.parse(this.response);
-		if (ftAnswer.success) {
-			renderRightContainer(true, db, table);
-			renderTableDescription(ftAnswer.msg, table, db);
+		try {
+			ftAnswer = JSON.parse(this.response);
+			if (ftAnswer.success) {
+				renderRightContainer(true, db, table);
+				renderTableDescription(ftAnswer.msg, table, db);
+			}
+		} catch(error) {
+			console.log(this.response);
+			return 0;
 		}
+		
 	}
 
 	xmlhttp.open("GET", 'func.php' + ftParameters, true);
@@ -465,6 +523,48 @@ function sqlATDC(data, table) {
 		
 	for (var i = 1; i < tables.length; i++) {
 		sql += ', DROP COLUMN ' + tables[i];
+	}
+
+	return sql;
+}
+
+function sqlCT(data, table) {
+	if (!data.length) {
+		return 0;
+	}
+	
+	var sql = 'CREATE TABLE ' + table + '(',
+		isFirst = true;
+
+	for (var i = 0; i < data.length; i++) {
+		sql += generate(data[i]);
+		if (data.length - i > 1) {
+			sql += ', ';
+		}
+	}
+
+	sql += ')';
+
+	function generate(data) {
+		var localSql = '';
+
+		for (var i in data) {
+			if (data[i]) {
+				if ((i == 'Null' && data[i] == 'NO')) {
+					localSql += 'NOT NULL ';
+
+				} else if (i == 'Null' && data[i] == 'YES') {
+					localSql += 'NULL ';
+
+				} else if (i == 'Default') {
+					localSql += 'DEFAULT ' + "'" + data[i] + "'" + ' ';
+
+				} else {
+					localSql += data[i] + ' ';
+				}
+			}
+		}
+		return localSql;
 	}
 
 	return sql;
@@ -511,13 +611,47 @@ function sqlATA(data, table) {
 
 		return localSql;
 	}
-	console.log(sql);
+
 	return sql;
 }
 
+function parseTr(data) {
+	var addedRows = [],
+		count = 0,
+		parameter;
+	for (var i in data) {
+		var items = data[i].childNodes;
+		addedRows[count] = {};
+
+		for (var j = 0; j < items.length; j++) {
+			var input = items[j].firstChild,
+				parameter = input.dataset.parameter;
+				addedRows[count][parameter] = input.value; 
+		}
+		count++;
+	}
+	return addedRows;
+}
+
 function saveAndGenerateSqlNewTable(data, mode, table, db) {
-	console.log(db);
-	sendSql('CREATE TABLE letsee (id int(6))', 'write');
+		var addedRows = parseTr(data),
+			sql = sqlCT(addedRows, table);
+
+	sendSql(sql, 'write', db, function() {
+		var dbItem = document.querySelector('[data-db=' + db + '].db'),
+			dbTitle = dbItem.querySelector('.db__title'),
+			dbOld = dbItem.querySelector('.db-tables'),
+			dbOldItems = dbOld.childNodes;
+		dbItem.classList.remove('db--tables-rendered');
+		for (var i = 0; i < dbOldItems.length; i++) {
+			dbOldItems[i].parentNode.removeChild(dbOldItems[i]);
+		}
+
+		fetchAllTables(dbTitle);
+		fetchTable(table, db);
+	});
+
+
 }
 
 function saveAndGenerateSqlStructure(data, mode, table) {
@@ -534,18 +668,7 @@ function saveAndGenerateSqlStructure(data, mode, table) {
 		var addedRows = [],
 			count = 0;
 
-		for (var i in data) {
-			var items = data[i].childNodes;
-			addedRows[count] = {};
-
-			for (var j = 0; j < items.length; j++) {
-				var input = items[j].firstChild,
-					parameter = input.dataset.parameter;
-					addedRows[count][parameter] = input.value; 
-			}
-
-			count++;
-		}
+		addedRows = parseTr(data);
 		sSql = sqlATA(addedRows, table);
 		sMode = 'write';
 	}
@@ -573,6 +696,8 @@ function altering(changingButtons, tableContent, tableName, fields, alteringFunc
 		columnsToAlter = {},
 		newCount = 0,
 		db = tableContent.dataset.db;
+
+	tableContent.changingButtons = changingButtons;
 
 	inputs = tableContent.querySelectorAll('input');
 	rows = tableContent.querySelectorAll('tbody tr');	
@@ -629,12 +754,15 @@ function altering(changingButtons, tableContent, tableName, fields, alteringFunc
 
 			else if (this == changingButtons.save) {
 				alteringFunc(columnsToAlter, changingMode, tableName, additionalData);
-				fetchTable(tableName, db);
+
+				if (tableName && db) {
+					fetchTable(tableName, db);
+				}
+				
 				changingMode = false;
 				changingButtons.save.classList.add('disabled');
 				resetAltering(inputs, tableContent);
 				resetDeleting(rows, tableContent);
-				resetAdding(tableContent);
 
 			} else {
 				changingMode = false;
@@ -684,4 +812,7 @@ function altering(changingButtons, tableContent, tableName, fields, alteringFunc
 			items[i].parentNode.removeChild(items[i]);
 		}
 	}
+
+	return tableContent;
+
 }

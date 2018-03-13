@@ -150,7 +150,7 @@ function renderChangingButtons(container, data) {
 	return obj;
 }
 
-function renderNewTableInterface(db) {
+function renderNewTableInterface(db, tableName) {
 	var container = document.querySelector('.table-structure'),
 		changingButtons = renderChangingButtons(container, {'add': true, 'save': true}),
 		tableContainer = basicRender('div', 'e-table-container', container),
@@ -166,7 +166,8 @@ function renderNewTableInterface(db) {
 		td.innerHTML = i;
 	}
 
-	altering(changingButtons, tableContent, '', Object.keys(fields), saveAndGenerateSqlNewTable, db);
+	var alteringObj = altering(changingButtons, tableContent, tableName, Object.keys(fields), saveAndGenerateSqlNewTable, db);
+	alteringObj.changingButtons.add.click();
 }
 
 function renderTableDescription(data, tableName, db) {
