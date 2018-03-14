@@ -119,7 +119,7 @@ function renderTable(table, container) {
 	elem.dataset.table = table;
 
 	elem.addEventListener('click', function() {
-		fetchTable(this.dataset.table, findParent(this, 'db').dataset.db);
+		fetchTable(this.dataset.table, findParent(this, 'db').dataset.db, 'structure');
 	})
 }
 
@@ -170,19 +170,29 @@ function renderNewTableInterface(db, tableName) {
 	alteringObj.changingButtons.add.click();
 }
 
-function renderTableDescription(data, tableName, db, mainContainer, alteringFunc) {
-
+function renderTableDescription(data, tableName, db, mainContainer, alteringFunc, activeTab) {
 	var fields = getFields(data),
 		changingButtons = renderChangingButtons(mainContainer, {'add': true, 'alter': true, 'remove': true, 'save': true}),
 		tableContainer = basicRender('div', 'e-table-container', mainContainer),
-		tableContent = basicRender('table', 'e-table', tableContainer),
-		activeTab = document.querySelector('.tabs__structure'),
+		tableContent = basicRender('table', 'e-table', tableContainer),	
 		fieldsTh, fieldsTr, fieldsTbody, fieldsInput, td, inputs,
 		columnsToAlter = {},
+		PK, noPKCount = 0,
 		changingMode;
 
+	if (data.length) {
+		mainContainer.listOfColumns = getColumns(data);
+	}	
+
+	if (!data.length) {
+		fields = document.querySelector('.table-structure').listOfColumns;
+	}
+
 	tableContent.dataset.db = db;
-	activeTab.parent.open();
+	if (activeTab) {
+		activeTab = document.querySelector('.tabs__' + activeTab);
+		activeTab.parent.open();
+	}
 
 	fieldsTh = basicRender('thead', '', tableContent);
 	fieldsTr = basicRender('tr', '', fieldsTh);
@@ -194,9 +204,22 @@ function renderTableDescription(data, tableName, db, mainContainer, alteringFunc
 	fields = Object.keys(fields);
 	fieldsTbody = basicRender('tbody', '', tableContent);
 
+	mainContainer;
+	if (!mainContainer.hasOwnProperty('PK')) {
+		PK = fields[0];
+	} else if (mainContainer['PK']) {
+		PK = mainContainer['PK'];
+	}
+
+
+
 	for (i in data) {
 		fieldsTr = basicRender('tr', '', fieldsTbody);
-		fieldsTr.dataset.column = data[i][fields[0]];
+		if (PK) {
+			fieldsTr.dataset.column = data[i][PK];
+		} else {
+			fieldsTr.dataset.column = noPKCount++;
+		}
 
 		for (var j = 0; j < fields.length; j++) {
 			fieldsTd = basicRender('td', '', fieldsTr);

@@ -323,7 +323,7 @@ function sendSql(sql, mode, use, successCallback) {
 			if (answer.success) {
 				successCallback();
 			} else {
-				shoNotification(answer.msg, 3000);
+				showNotification(answer.msg, 3000);
 			}
 		} catch(error) {
 			console.log(error);
@@ -468,12 +468,16 @@ function fetchAllTables(elem) {
 	xmlhttp.send();
 }
 
-function fetchTable(table, db) {
+function fetchTable(table, db, activeTab) {
 	var ftScript = '?script=query.php',
 		ftSql = ' DESCRIBE ' + table,
 		ftMode = '&mode=read',
 		ftParameters = ftScript + '&use=' + db + '&sql=' + ftSql + ftMode,
 		ftAnswer;
+
+	if (!activeTab) {
+		activeTab = 'structure';
+	}	
 
 	xmlhttp = new XMLHttpRequest();
 	xmlhttp.onload = function() {
@@ -481,11 +485,10 @@ function fetchTable(table, db) {
 			ftAnswer = JSON.parse(this.response);
 			if (ftAnswer.success) {
 				renderRightContainer(true, db, table);
-				renderTableDescription(ftAnswer.msg, table, db, document.querySelector('.table-structure'), saveAndGenerateSqlStructure);
-				fetchTableContent(table, db);
+				renderTableDescription(ftAnswer.msg, table, db, document.querySelector('.table-structure'), saveAndGenerateSqlStructure, activeTab);
+				fetchTableContent(table, db, ftAnswer.msg);
 			}
 		} catch(error) {
-			console.log(this.response);
 			return 0;
 		}
 		
@@ -495,22 +498,25 @@ function fetchTable(table, db) {
 	xmlhttp.send();
 }
 
-function fetchTableContent(table, db) {
+function fetchTableContent(table, db, structure) {
 	var ftcScript = '?script=query.php',
 		ftcSql = ' SELECT * FROM ' + table,
 		ftcMode = '&mode=read',
 		ftcParameters = ftcScript + '&use=' + db + '&sql=' + ftcSql + ftcMode,
-		ftcAnswer;
+		ftcAnswer;	
 
 	xmlhttp = new XMLHttpRequest();
 	xmlhttp.onload = function() {
 		try {
+			var container = document.querySelector('.table-content');
+			container.PK = getPKFrom(structure);
 			ftcAnswer = JSON.parse(this.response);
+			console.log(container.PK);
 			if (ftcAnswer.success) {
-				renderTableDescription(ftcAnswer.msg, table, db, document.querySelector('.table-content'), saveAndGenerateSqlContent);
+				renderTableDescription(ftcAnswer.msg, table, db, container, saveAndGenerateSqlContent);
 			}
 		} catch(error) {
-			console.log(this.response);
+			console.log(error);
 			return 0;
 		}
 		
@@ -520,12 +526,38 @@ function fetchTableContent(table, db) {
 	xmlhttp.send();	
 }
 
+function getPKFrom(data) {
+	var PK;
+
+	for (var i = 0; i < data.length; i++) {
+		if (data[i]['Key'] == 'PRI' || data[i]['Key'] == 'PRIMARY KEY') {
+			PK = data[i]['Field'];
+			return PK;
+		}
+	}
+
+	return 0;
+}
+
 function getFields(data) {
 	var fields = [];
 	for (var i in data) {
 		fields.push(Object.keys(data[i]));
 	}
 	return unionOfArrays(fields);
+}
+
+function getColumns(data) {
+	var fields = {};
+	for (var i = 0; i < data.length; i++) {
+		for (var j in data[i]) {
+			if (j == 'Field') {
+				fields[data[i][j]] = 1;
+				break;
+			}
+		}
+	}
+	return fields;
 }
 
 function unionOfArrays(data) {
@@ -702,8 +734,9 @@ function sqlExceptions(data, i) {
 	return localSql;
 }
 
-function parseTr(data, savePK) {
+function parseTr(data, savePK, saveOldValues) {
 	var addedRows = [],
+		addedRowsOld = [],
 		count = 0,
 		parameter;
 	for (var i in data) {
@@ -712,7 +745,11 @@ function parseTr(data, savePK) {
 		for (var j = 0; j < items.length; j++) {
 			var input = items[j].firstChild,
 				parameter = input.dataset.parameter;
-				addedRows[count][parameter] = input.value; 
+				if (!saveOldValues) {
+					addedRows[count][parameter] = input.value;
+				} else {
+					addedRows[count][parameter] = input.dataset.value;
+				}
 		}
 		if (savePK) {
 			addedRows[count]['oldPK'] = i;
@@ -743,8 +780,153 @@ function saveAndGenerateSqlNewTable(data, mode, table, db) {
 
 }
 
-function saveAndGenerateSqlContent() {
+function sqlD(data, table, PK) {
+	if (PK) {
+		var sql = 'DELETE FROM ' + table + ' WHERE ';
+		for (var i = 0; i < data.length; i++) {
+			sql += PK + ' = ' + data[i][PK];
 
+			if (data.length - i > 1) {
+				sql += ' OR ';
+			}
+		}
+		sql += ';';
+	}
+
+	else {
+		var sql = 'DELETE FROM ' + table + ' WHERE ';
+
+		for (var i = 0; i < data.length; i++) {
+			var isFirst = true;
+
+			for (var j in data[i]) {
+				if (data[i][j]) {
+					if (!isFirst) {
+						sql += 'AND ';
+					}
+
+					isFirst = false;
+					sql += j + ' = \'' + data[i][j] + '\' ';
+				}
+			}
+
+			if (data.length - i > 1) {
+				sql += 'OR ';
+			}
+		}
+	}
+
+	return sql;
+}
+
+function sqlI(data, table, PK) {
+	if (PK) {
+		for (var i = 0; i < data.length; i++) {
+			delete data[i][PK];
+		}
+	}
+
+	var sql = 'INSERT INTO ' + table + ' (',
+		fields = Object.keys(getFields(data));
+
+	for (var i = 0; i < fields.length; i++) {
+		sql += fields[i];
+		if (fields.length - i > 1) {
+			sql += ', ';
+		}
+	}
+
+	sql += ') VALUES ';
+
+	for (i = 0; i < data.length; i++) {
+		sql += '(';
+		var isFirst = true;
+
+		for (var j in data[i]) {
+			if (!isFirst) {
+				sql += ', ';
+			}
+			sql += '\'' + data[i][j] + '\' ';
+			isFirst = false;
+		}
+		sql += ')';
+		if (data.length - i > 1) {
+			sql += ', ';
+		}
+	}
+	sql += ';';
+	
+	return sql;
+}
+
+function sqlS(data, oldData, table, PK) {
+	var sql = '';
+	if (PK) {
+		for (var i = 0; i < data.length; i++) {
+			var isFirst = true;
+			sql += 'UPDATE ' + table + ' SET ';
+			for (var j in data[i]) {
+				if (data[i][j] && j != PK) {
+					if (!isFirst) {
+						sql += ', ';
+					}
+					isFirst = false;
+					sql += j + '=\'' + data[i][j] + '\' ';
+				}
+			}
+			sql += 'WHERE ' + PK + '=' + data[i][PK] + '; ';
+		}
+	} else {
+		for (var i = 0; i < data.length; i++) {
+			var isFirst = true;
+			sql += 'UPDATE ' + table + ' SET ';
+			for (var j in data[i]) {
+				if (data[i][j] && j != PK) {
+					if (!isFirst) {
+						sql += ', ';
+					}
+					isFirst = false;
+					sql += j + '=\'' + data[i][j] + '\' ';
+				}
+			};
+
+			isFirst = true;
+			sql += 'WHERE ';
+			for (j in oldData[i]) {
+				if (!isFirst) {
+					sql += ' AND ';
+				}
+				isFirst = false;
+				sql += j + '=\'' + oldData[i][j] + '\''; 
+			};
+			sql += '; ';
+		}
+	}
+
+	return sql;
+}
+
+function saveAndGenerateSqlContent(data, mode, table, db) {
+	var sScript = '?script=query.php',
+		container = document.querySelector('.table-content'),
+		PK = container.PK,
+		sSql, sMode, sParameters, sAnswer, addedRows;
+
+	addedRows = parseTr(data);	
+
+	if (mode == 'drop') {
+		sSql = sqlD(addedRows, table, PK);
+	} else if (mode == 'add') {
+		sSql = sqlI(addedRows, table, PK);
+	} else if (mode == 'alter') {
+		var addedRowsOld = parseTr(data, false, true);
+		sSql = sqlS(addedRows, addedRowsOld, table, PK);
+	}
+
+	sParameters = sScript + '&scl=' + sSql + '&mode=' + sMode;
+	sendSql(sSql, sMode, null, function() {
+		fetchTable(table, db, 'content');
+	})
 }
 
 function saveAndGenerateSqlStructure(data, mode, table, db) {
@@ -771,8 +953,7 @@ function saveAndGenerateSqlStructure(data, mode, table, db) {
 		sSql = sqlATM(addedRows, table);
 	}
 
-	sParameters = sScript + '&sql=' + sSql + '&mode=' + sMode,
-	console.log(sParameters);
+	sParameters = sScript + '&sql=' + sSql + '&mode=' + sMode;
 
 	xmlhttp = new XMLHttpRequest();
 
@@ -785,7 +966,6 @@ function saveAndGenerateSqlStructure(data, mode, table, db) {
 			fetchTable(table, db)
 		}
 	}
-
 	xmlhttp.open("GET", 'func.php' + sParameters, true);
 	xmlhttp.send();
 }
@@ -859,11 +1039,6 @@ function altering(changingButtons, tableContent, tableName, fields, alteringFunc
 					additionalData = db;
 				}
 				alteringFunc(columnsToAlter, changingMode, tableName, additionalData);
-				
-				changingMode = false;
-				changingButtons.save.classList.add('disabled');
-				resetAltering(inputs, tableContent);
-				resetDeleting(rows, tableContent);
 
 			} else {
 				changingMode = false;

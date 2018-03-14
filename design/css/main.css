@@ -264,7 +264,7 @@ body,html {
 }
 
 .db-tables {
-	overflow-y: auto;
+	overflow-y: scroll;
 	transition: .3s ease-in-out;
 	padding-left: 30px;
 	padding-right: 30px;
@@ -327,6 +327,10 @@ body,html {
 
 .tab-container {
 	overflow: auto;
+}
+
+.tab-content {
+	display: none;
 }
 
 .tab-content .btn {
