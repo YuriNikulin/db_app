@@ -734,8 +734,9 @@ function sqlExceptions(data, i) {
 	return localSql;
 }
 
-function parseTr(data, savePK) {
+function parseTr(data, savePK, saveOldValues) {
 	var addedRows = [],
+		addedRowsOld = [],
 		count = 0,
 		parameter;
 	for (var i in data) {
@@ -744,7 +745,11 @@ function parseTr(data, savePK) {
 		for (var j = 0; j < items.length; j++) {
 			var input = items[j].firstChild,
 				parameter = input.dataset.parameter;
-				addedRows[count][parameter] = input.value; 
+				if (!saveOldValues) {
+					addedRows[count][parameter] = input.value;
+				} else {
+					addedRows[count][parameter] = input.dataset.value;
+				}
 		}
 		if (savePK) {
 			addedRows[count]['oldPK'] = i;
@@ -854,18 +859,68 @@ function sqlI(data, table, PK) {
 	return sql;
 }
 
+function sqlS(data, oldData, table, PK) {
+	var sql = '';
+	if (PK) {
+		for (var i = 0; i < data.length; i++) {
+			var isFirst = true;
+			sql += 'UPDATE ' + table + ' SET ';
+			for (var j in data[i]) {
+				if (data[i][j] && j != PK) {
+					if (!isFirst) {
+						sql += ', ';
+					}
+					isFirst = false;
+					sql += j + '=\'' + data[i][j] + '\' ';
+				}
+			}
+			sql += 'WHERE ' + PK + '=' + data[i][PK] + '; ';
+		}
+	} else {
+		for (var i = 0; i < data.length; i++) {
+			var isFirst = true;
+			sql += 'UPDATE ' + table + ' SET ';
+			for (var j in data[i]) {
+				if (data[i][j] && j != PK) {
+					if (!isFirst) {
+						sql += ', ';
+					}
+					isFirst = false;
+					sql += j + '=\'' + data[i][j] + '\' ';
+				}
+			};
+
+			isFirst = true;
+			sql += 'WHERE ';
+			for (j in oldData[i]) {
+				if (!isFirst) {
+					sql += ' AND ';
+				}
+				isFirst = false;
+				sql += j + '=\'' + oldData[i][j] + '\''; 
+			};
+			sql += '; ';
+		}
+	}
+
+	return sql;
+}
+
 function saveAndGenerateSqlContent(data, mode, table, db) {
 	var sScript = '?script=query.php',
 		container = document.querySelector('.table-content'),
 		PK = container.PK,
 		sSql, sMode, sParameters, sAnswer, addedRows;
 
+	addedRows = parseTr(data);	
+
 	if (mode == 'drop') {
-		addedRows = parseTr(data);
 		sSql = sqlD(addedRows, table, PK);
 	} else if (mode == 'add') {
-		addedRows = parseTr(data);
 		sSql = sqlI(addedRows, table, PK);
+	} else if (mode == 'alter') {
+		var addedRowsOld = parseTr(data, false, true);
+		sSql = sqlS(addedRows, addedRowsOld, table, PK);
 	}
 
 	sParameters = sScript + '&scl=' + sSql + '&mode=' + sMode;
