@@ -180,6 +180,14 @@ function renderTableDescription(data, tableName, db, mainContainer, alteringFunc
 		PK, noPKCount = 0,
 		changingMode;
 
+	if (data.length) {
+		mainContainer.listOfColumns = getColumns(data);
+	}	
+
+	if (!data.length) {
+		fields = document.querySelector('.table-structure').listOfColumns;
+	}
+
 	tableContent.dataset.db = db;
 	if (activeTab) {
 		activeTab = document.querySelector('.tabs__' + activeTab);
@@ -202,6 +210,8 @@ function renderTableDescription(data, tableName, db, mainContainer, alteringFunc
 	} else if (mainContainer['PK']) {
 		PK = mainContainer['PK'];
 	}
+
+
 
 	for (i in data) {
 		fieldsTr = basicRender('tr', '', fieldsTbody);

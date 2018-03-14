@@ -516,7 +516,7 @@ function fetchTableContent(table, db, structure) {
 				renderTableDescription(ftcAnswer.msg, table, db, container, saveAndGenerateSqlContent);
 			}
 		} catch(error) {
-			console.log(this.response);
+			console.log(error);
 			return 0;
 		}
 		
@@ -545,6 +545,19 @@ function getFields(data) {
 		fields.push(Object.keys(data[i]));
 	}
 	return unionOfArrays(fields);
+}
+
+function getColumns(data) {
+	var fields = {};
+	for (var i = 0; i < data.length; i++) {
+		for (var j in data[i]) {
+			if (j == 'Field') {
+				fields[data[i][j]] = 1;
+				break;
+			}
+		}
+	}
+	return fields;
 }
 
 function unionOfArrays(data) {
