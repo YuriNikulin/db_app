@@ -971,11 +971,6 @@ function altering(changingButtons, tableContent, tableName, fields, alteringFunc
 					additionalData = db;
 				}
 				alteringFunc(columnsToAlter, changingMode, tableName, additionalData);
-				
-				changingMode = false;
-				changingButtons.save.classList.add('disabled');
-				resetAltering(inputs, tableContent);
-				resetDeleting(rows, tableContent);
 
 			} else {
 				changingMode = false;
