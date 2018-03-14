@@ -627,39 +627,18 @@ function sqlCT(data, table) {
 	return sql;
 }
 
-function sqlATM(data, table) {
-	var rowsToReplace = [],
-		sql = '', 
-		rowsToMove = [];
+function sqlATM(data, oldData, table) {
+	var sql = '';
 
 	if (!data.length) {
 		return 0;
-	}
-	
-	for (var i in data) {
-		if (data[i].oldPK != data[i]['Field']) {
-			rowsToReplace.push(data[i]);
-		}
-	}
-
-	if (rowsToReplace.length) {
-		sql += 'ALTER TABLE ' + table + ' ';
-		for (i = 0; i < rowsToReplace.length; i++) {
-			data.splice(data.indexOf(rowsToReplace[i]), 1);
-			sql += 'DROP COLUMN ' + rowsToReplace[i].oldPK;
-			if (rowsToReplace.length - i > 1) {
-				sql += ', '
-			}
-		}
-		sql += '; ';
-		sql += sqlATA(rowsToReplace, table) + '; ';
 	}
 
 	if (data.length) {
 		sql += 'ALTER TABLE ' + table + ' ';
 
 		for (i = 0; i < data.length; i++) {
-			sql += generate(data[i]);
+			sql += generate(data[i], oldData[i]);
 			if (data.length - i > 1) {
 				sql += ', ';
 			}
@@ -668,10 +647,13 @@ function sqlATM(data, table) {
 		sql += ';';
 	}
 
-	function generate(data) {
-		var localSql = 'MODIFY ';
+	function generate(data, oldData) {
+		var localSql = 'CHANGE COLUMN ' + '`' + oldData['Field'] + '` `' + data['Field'] + '` ';
 
 		for (var i in data) {
+			if (i == 'Field') {
+				continue;
+			}
 			localSql += sqlExceptions(data[i], i);
 		}
 
@@ -949,8 +931,9 @@ function saveAndGenerateSqlStructure(data, mode, table, db) {
 		sMode = 'write';
 	} else if (mode == 'alter') {
 		addedRows = parseTr(data, true);
+		var addedRowsOld = parseTr(data, false, true);
 		sMode = 'write';
-		sSql = sqlATM(addedRows, table);
+		sSql = sqlATM(addedRows, addedRowsOld, table);
 	}
 
 	sParameters = sScript + '&sql=' + sSql + '&mode=' + sMode;
