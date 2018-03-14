@@ -797,7 +797,47 @@ function sqlD(data, table, PK) {
 			}
 		}
 	}
-	console.log(sql);
+
+	return sql;
+}
+
+function sqlI(data, table, PK) {
+	if (PK) {
+		for (var i = 0; i < data.length; i++) {
+			delete data[i][PK];
+		}
+	}
+
+	var sql = 'INSERT INTO ' + table + ' (',
+		fields = Object.keys(getFields(data));
+
+	for (var i = 0; i < fields.length; i++) {
+		sql += fields[i];
+		if (fields.length - i > 1) {
+			sql += ', ';
+		}
+	}
+
+	sql += ') VALUES ';
+
+	for (i = 0; i < data.length; i++) {
+		sql += '(';
+		var isFirst = true;
+
+		for (var j in data[i]) {
+			if (!isFirst) {
+				sql += ', ';
+			}
+			sql += '\'' + data[i][j] + '\' ';
+			isFirst = false;
+		}
+		sql += ')';
+		if (data.length - i > 1) {
+			sql += ', ';
+		}
+	}
+	sql += ';';
+	
 	return sql;
 }
 
@@ -810,6 +850,9 @@ function saveAndGenerateSqlContent(data, mode, table, db) {
 	if (mode == 'drop') {
 		addedRows = parseTr(data);
 		sSql = sqlD(addedRows, table, PK);
+	} else if (mode == 'add') {
+		addedRows = parseTr(data);
+		sSql = sqlI(addedRows, table, PK);
 	}
 
 	sParameters = sScript + '&scl=' + sSql + '&mode=' + sMode;
