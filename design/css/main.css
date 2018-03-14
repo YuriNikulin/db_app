@@ -329,6 +329,10 @@ body,html {
 	overflow: auto;
 }
 
+.tab-content {
+	display: none;
+}
+
 .tab-content .btn {
 	font-size: 15px;
 }

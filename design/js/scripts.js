@@ -323,7 +323,7 @@ function sendSql(sql, mode, use, successCallback) {
 			if (answer.success) {
 				successCallback();
 			} else {
-				shoNotification(answer.msg, 3000);
+				showNotification(answer.msg, 3000);
 			}
 		} catch(error) {
 			console.log(error);
@@ -468,12 +468,16 @@ function fetchAllTables(elem) {
 	xmlhttp.send();
 }
 
-function fetchTable(table, db) {
+function fetchTable(table, db, activeTab) {
 	var ftScript = '?script=query.php',
 		ftSql = ' DESCRIBE ' + table,
 		ftMode = '&mode=read',
 		ftParameters = ftScript + '&use=' + db + '&sql=' + ftSql + ftMode,
 		ftAnswer;
+
+	if (!activeTab) {
+		activeTab = 'structure';
+	}	
 
 	xmlhttp = new XMLHttpRequest();
 	xmlhttp.onload = function() {
@@ -481,11 +485,10 @@ function fetchTable(table, db) {
 			ftAnswer = JSON.parse(this.response);
 			if (ftAnswer.success) {
 				renderRightContainer(true, db, table);
-				renderTableDescription(ftAnswer.msg, table, db, document.querySelector('.table-structure'), saveAndGenerateSqlStructure);
-				fetchTableContent(table, db);
+				renderTableDescription(ftAnswer.msg, table, db, document.querySelector('.table-structure'), saveAndGenerateSqlStructure, activeTab);
+				fetchTableContent(table, db, ftAnswer.msg);
 			}
 		} catch(error) {
-			console.log(this.response);
 			return 0;
 		}
 		
@@ -495,19 +498,22 @@ function fetchTable(table, db) {
 	xmlhttp.send();
 }
 
-function fetchTableContent(table, db) {
+function fetchTableContent(table, db, structure) {
 	var ftcScript = '?script=query.php',
 		ftcSql = ' SELECT * FROM ' + table,
 		ftcMode = '&mode=read',
 		ftcParameters = ftcScript + '&use=' + db + '&sql=' + ftcSql + ftcMode,
-		ftcAnswer;
+		ftcAnswer;	
 
 	xmlhttp = new XMLHttpRequest();
 	xmlhttp.onload = function() {
 		try {
+			var container = document.querySelector('.table-content');
+			container.PK = getPKFrom(structure);
 			ftcAnswer = JSON.parse(this.response);
+			console.log(container.PK);
 			if (ftcAnswer.success) {
-				renderTableDescription(ftcAnswer.msg, table, db, document.querySelector('.table-content'), saveAndGenerateSqlContent);
+				renderTableDescription(ftcAnswer.msg, table, db, container, saveAndGenerateSqlContent);
 			}
 		} catch(error) {
 			console.log(this.response);
@@ -518,6 +524,19 @@ function fetchTableContent(table, db) {
 
 	xmlhttp.open("GET", 'func.php' + ftcParameters, true);
 	xmlhttp.send();	
+}
+
+function getPKFrom(data) {
+	var PK;
+
+	for (var i = 0; i < data.length; i++) {
+		if (data[i]['Key'] == 'PRI' || data[i]['Key'] == 'PRIMARY KEY') {
+			PK = data[i]['Field'];
+			return PK;
+		}
+	}
+
+	return 0;
 }
 
 function getFields(data) {
@@ -743,8 +762,60 @@ function saveAndGenerateSqlNewTable(data, mode, table, db) {
 
 }
 
-function saveAndGenerateSqlContent() {
+function sqlD(data, table, PK) {
+	if (PK) {
+		var sql = 'DELETE FROM ' + table + ' WHERE ';
+		for (var i = 0; i < data.length; i++) {
+			sql += PK + ' = ' + data[i][PK];
 
+			if (data.length - i > 1) {
+				sql += ' OR ';
+			}
+		}
+		sql += ';';
+	}
+
+	else {
+		var sql = 'DELETE FROM ' + table + ' WHERE ';
+
+		for (var i = 0; i < data.length; i++) {
+			var isFirst = true;
+
+			for (var j in data[i]) {
+				if (data[i][j]) {
+					if (!isFirst) {
+						sql += 'AND ';
+					}
+
+					isFirst = false;
+					sql += j + ' = \'' + data[i][j] + '\' ';
+				}
+			}
+
+			if (data.length - i > 1) {
+				sql += 'OR ';
+			}
+		}
+	}
+	console.log(sql);
+	return sql;
+}
+
+function saveAndGenerateSqlContent(data, mode, table, db) {
+	var sScript = '?script=query.php',
+		container = document.querySelector('.table-content'),
+		PK = container.PK,
+		sSql, sMode, sParameters, sAnswer, addedRows;
+
+	if (mode == 'drop') {
+		addedRows = parseTr(data);
+		sSql = sqlD(addedRows, table, PK);
+	}
+
+	sParameters = sScript + '&scl=' + sSql + '&mode=' + sMode;
+	sendSql(sSql, sMode, null, function() {
+		fetchTable(table, db, 'content');
+	})
 }
 
 function saveAndGenerateSqlStructure(data, mode, table, db) {
@@ -771,8 +842,7 @@ function saveAndGenerateSqlStructure(data, mode, table, db) {
 		sSql = sqlATM(addedRows, table);
 	}
 
-	sParameters = sScript + '&sql=' + sSql + '&mode=' + sMode,
-	console.log(sParameters);
+	sParameters = sScript + '&sql=' + sSql + '&mode=' + sMode;
 
 	xmlhttp = new XMLHttpRequest();
 
@@ -785,7 +855,6 @@ function saveAndGenerateSqlStructure(data, mode, table, db) {
 			fetchTable(table, db)
 		}
 	}
-
 	xmlhttp.open("GET", 'func.php' + sParameters, true);
 	xmlhttp.send();
 }

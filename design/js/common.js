@@ -3,6 +3,7 @@ var pathPhpFunc = 'app/functions/fn_',
 	animDuration = 300,
 	windowHeight,
 	windowWidth,
+	activeTab = 'test',
 	notificationDuration = 4000,
 	columnParameters = {
 		'Field': 1,
